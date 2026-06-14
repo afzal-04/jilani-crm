@@ -1,0 +1,39 @@
+/* src/components/AppShell.module.css */
+
+.app { display: flex; min-height: 100vh; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  background: #fff; border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 40; gap: 12px;
+}
+.topbarLeft { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.topbarLeft h1 { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hamburger {
+  display: none; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; width: 38px; height: 38px; font-size: 18px;
+  cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.refreshBtn {
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text);
+}
+.refreshBtn:hover { background: #ebeff5; }
+
+.content { padding: 22px 24px; flex: 1; }
+
+.loadingScreen {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; font-size: 15px; color: var(--text-muted);
+}
+
+@media (max-width: 880px) {
+  .hamburger { display: flex; }
+  .content { padding: 14px; }
+  .topbar { padding: 0 14px; }
+}

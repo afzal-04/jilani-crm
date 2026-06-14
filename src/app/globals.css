@@ -1,0 +1,35 @@
+/* src/app/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --gold: #C8941A;
+  --gold-light: #F0C55A;
+  --blue: #1A6FBF;
+  --blue-light: #EAF3FC;
+  --ink: #0B1A35;
+  --bg: #F4F7FB;
+  --white: #ffffff;
+  --border: #E1E8F0;
+  --text: #1A2B47;
+  --text-muted: #6B7E99;
+  --green: #1A7A4A;
+  --red: #C0392B;
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--font); }
+input, select, textarea { font-family: var(--font); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #c8d4e0; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
