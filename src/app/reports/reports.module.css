@@ -1,0 +1,63 @@
+/* src/app/reports/reports.module.css */
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+/* ── Donut row ── */
+.donutsRow { margin-bottom: 4px; }
+.donutCard {
+  background: #fff; border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px 24px; display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-around;
+}
+
+.donut { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
+.donutInner {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  text-align: center; line-height: 1.2;
+}
+.donutInner strong { font-size: 15px; font-weight: 800; display: block; color: var(--ink); }
+.donutInner span   { font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── Bar chart ── */
+.barChart { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; }
+.barRow   { display: grid; grid-template-columns: 130px 1fr 60px; gap: 10px; align-items: center; }
+.barLabel { font-size: 12.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barTrack { background: #f0f4f8; border-radius: 8px; height: 10px; overflow: hidden; }
+.barFill  { height: 100%; border-radius: 8px; transition: width .5s ease; min-width: 4px; }
+.barValue { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: right; white-space: nowrap; }
+
+/* ── Funnel ── */
+.funnel { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; }
+.funnelRow { display: grid; grid-template-columns: 130px 1fr 80px; gap: 10px; align-items: center; }
+.funnelLabel { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.funnelTrack { background: #f0f4f8; border-radius: 8px; height: 14px; overflow: hidden; }
+.funnelFill  { height: 100%; border-radius: 8px; transition: width .5s ease; min-width: 6px; }
+.funnelMeta  { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+.funnelMeta strong { color: var(--ink); font-weight: 700; }
+.funnelMeta span   { color: var(--text-muted); }
+
+/* ── Summary grid ── */
+.summaryGrid {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 0; padding: 4px 0;
+}
+.summaryItem {
+  padding: 16px 20px; text-align: center;
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.summaryItem:nth-child(6n) { border-right: none; }
+.summaryItem:nth-last-child(-n+6) { border-bottom: none; }
+.summaryValue { font-size: 24px; font-weight: 800; color: var(--ink); }
+.summaryLabel { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+@media (max-width: 1100px) { .summaryGrid { grid-template-columns: repeat(4,1fr); } }
+@media (max-width: 980px)  { .gridTwo { grid-template-columns: 1fr; } }
+@media (max-width: 760px)  {
+  .summaryGrid { grid-template-columns: repeat(2,1fr); }
+  .donutCard   { justify-content: center; }
+  .barRow, .funnelRow { grid-template-columns: 100px 1fr 50px; }
+}
