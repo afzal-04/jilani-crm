@@ -96,9 +96,16 @@ export interface Task {
 
 export interface StaffMember {
   id?: string;
-  name: string; email: string; phone: string;
-  role: StaffRole; status: 'active' | 'inactive';
-  joinDate: string; notes: string;
+  uid?: string;               // Firebase Auth UID
+  name: string;
+  email: string;
+  phone: string;
+  role: StaffRole;
+  status: 'active' | 'inactive';
+  joinDate: string;
+  notes: string;
+  hasLogin?: boolean;         // true once Firebase account is created
+  passwordChanged?: boolean;  // true once staff changes temp password
   createdAt?: { seconds: number };
 }
 

@@ -14,6 +14,8 @@ import {
   getAttendance, getComms, getTasks,
   Parent, Tutor, FeeRecord, Assignment, AttendanceRecord, CommunicationLog, Task,
 } from '@/lib/firestore';
+import ExportButton from '@/components/ExportButton';
+import { exportFullReport } from '@/lib/exportExcel';
 import styles from './reports.module.css';
 
 // ── Bar chart (pure CSS) ─────────────────────────────────────────────────────
@@ -126,7 +128,6 @@ export default function ReportsPage() {
   const totalProfit   = totalRevenue - totalTutorPay;
   const pendingAmt    = fees.filter(f=>f.paymentStatus==='pending').reduce((s,f)=>s+(f.parentFee||0),0);
 
-  // Monthly revenue
   const monthlyMap = fees.filter(f=>f.paymentStatus!=='pending').reduce<Record<string,{rev:number,profit:number}>>((acc,f) => {
     if (!f.month) return acc;
     if (!acc[f.month]) acc[f.month] = {rev:0, profit:0};
@@ -136,41 +137,32 @@ export default function ReportsPage() {
   }, {});
   const monthlyData = Object.entries(monthlyMap)
     .slice(0,6)
-    .map(([label,{rev,profit}]) => ({label, value:rev, sub: currency(rev)}));
+    .map(([label,{rev}]) => ({label, value:rev, sub: currency(rev)}));
 
   // ── Leads ──
   const conversionRate  = parents.length ? Math.round((parents.filter(p=>p.status==='converted').length / parents.length)*100) : 0;
   const tutorConversion = tutors.length  ? Math.round((tutors.filter(t=>t.status==='converted').length  / tutors.length)*100)  : 0;
 
-  // Subject breakdown
   const subjectMap = parents.reduce<Record<string,number>>((acc,p) => {
     if (!p.subject) return acc;
     acc[p.subject] = (acc[p.subject]||0)+1;
     return acc;
   }, {});
-  const subjectData = Object.entries(subjectMap)
-    .sort(([,a],[,b])=>b-a).slice(0,7)
-    .map(([label,value]) => ({label, value}));
+  const subjectData = Object.entries(subjectMap).sort(([,a],[,b])=>b-a).slice(0,7).map(([label,value]) => ({label, value}));
 
-  // Area breakdown
   const areaMap = parents.reduce<Record<string,number>>((acc,p) => {
     if (!p.area) return acc;
     acc[p.area] = (acc[p.area]||0)+1;
     return acc;
   }, {});
-  const areaData = Object.entries(areaMap)
-    .sort(([,a],[,b])=>b-a).slice(0,7)
-    .map(([label,value]) => ({label, value}));
+  const areaData = Object.entries(areaMap).sort(([,a],[,b])=>b-a).slice(0,7).map(([label,value]) => ({label, value}));
 
-  // Source breakdown
   const sourceMap = parents.reduce<Record<string,number>>((acc,p) => {
     const src = p.source || 'Unknown';
     acc[src] = (acc[src]||0)+1;
     return acc;
   }, {});
-  const sourceData = Object.entries(sourceMap)
-    .sort(([,a],[,b])=>b-a)
-    .map(([label,value]) => ({label, value}));
+  const sourceData = Object.entries(sourceMap).sort(([,a],[,b])=>b-a).map(([label,value]) => ({label, value}));
 
   // ── Attendance ──
   const nonHoliday   = attendance.filter(a=>a.status!=='holiday').length;
@@ -178,7 +170,6 @@ export default function ReportsPage() {
   const attRate      = nonHoliday ? Math.round((presentCount/nonHoliday)*100) : 0;
   const totalHours   = Math.round(attendance.filter(a=>a.status==='present').reduce((s,a)=>s+(a.sessionDuration||0),0)/60);
 
-  // Tutor attendance breakdown
   const tutorAttMap = attendance.reduce<Record<string,{present:number,total:number}>>((acc,a) => {
     if (!a.tutorName) return acc;
     if (!acc[a.tutorName]) acc[a.tutorName] = {present:0,total:0};
@@ -192,7 +183,7 @@ export default function ReportsPage() {
 
   // ── Comms ──
   const commByChannel = ['call','whatsapp','visit','email','sms'].map(ch => ({
-    label: {call:'📞 Call',whatsapp:'💬 WhatsApp',visit:'🏠 Visit',email:'📧 Email',sms:'✉️ SMS'}[ch]||ch,
+    label: ({call:'📞 Call',whatsapp:'💬 WhatsApp',visit:'🏠 Visit',email:'📧 Email',sms:'✉️ SMS'} as Record<string,string>)[ch]||ch,
     value: comms.filter(c=>c.channel===ch).length,
   }));
 
@@ -201,6 +192,14 @@ export default function ReportsPage() {
 
   return (
     <AppShell title="Reports & Analytics" onRefresh={loadAll}>
+
+      {/* ── Export button row ── */}
+      <div style={{display:'flex', justifyContent:'flex-end', marginBottom:16}}>
+        <ExportButton
+          label="📥 Download Full Report"
+          onExport={() => exportFullReport({ parents, tutors, fees,assignments: classes, attendance, comms, tasks })}
+        />
+      </div>
 
       {/* Top KPIs */}
       <StatsRow>
@@ -234,8 +233,6 @@ export default function ReportsPage() {
 
       {/* Charts row 1 */}
       <div className={styles.gridTwo}>
-
-        {/* Lead pipeline funnel */}
         <Card pad>
           <CardHeader title="🔄 Parent Lead Pipeline" />
           <PipelineFunnel parents={parents} />
@@ -245,8 +242,6 @@ export default function ReportsPage() {
             <span>Closed: <strong>{parents.filter(p=>p.status==='closed').length}</strong></span>
           </div>
         </Card>
-
-        {/* Monthly revenue */}
         <Card pad>
           <CardHeader title="💰 Monthly Revenue" />
           {monthlyData.length === 0
@@ -258,8 +253,6 @@ export default function ReportsPage() {
 
       {/* Charts row 2 */}
       <div className={styles.gridTwo}>
-
-        {/* Subject demand */}
         <Card pad>
           <CardHeader title="📚 Subject Demand" />
           {subjectData.length === 0
@@ -267,8 +260,6 @@ export default function ReportsPage() {
             : <BarChart data={subjectData} color="var(--blue)" />
           }
         </Card>
-
-        {/* Area heatmap */}
         <Card pad>
           <CardHeader title="📍 Top Areas in Raipur" />
           {areaData.length === 0
@@ -280,8 +271,6 @@ export default function ReportsPage() {
 
       {/* Charts row 3 */}
       <div className={styles.gridTwo}>
-
-        {/* Tutor attendance */}
         <Card pad>
           <CardHeader title="👩‍🏫 Tutor Attendance Rate" />
           {tutorAttData.length === 0
@@ -289,8 +278,6 @@ export default function ReportsPage() {
             : <BarChart data={tutorAttData} color="#7B3DBF" />
           }
         </Card>
-
-        {/* Comms by channel */}
         <Card pad>
           <CardHeader title="💬 Communications by Channel" />
           <BarChart data={commByChannel.filter(c=>c.value>0)} color="var(--blue)" />
@@ -301,7 +288,6 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {/* Lead sources */}
       {sourceData.length > 0 && (
         <Card pad>
           <CardHeader title="🔗 Lead Sources" />
@@ -309,7 +295,6 @@ export default function ReportsPage() {
         </Card>
       )}
 
-      {/* Summary table */}
       <Card>
         <CardHeader title="📋 Quick Summary" />
         <div className={styles.summaryGrid}>

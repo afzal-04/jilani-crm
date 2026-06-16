@@ -1,7 +1,8 @@
 'use client';
 // src/app/tutors/page.tsx
 export const dynamic = 'force-dynamic';
-
+import ExportButton from '@/components/ExportButton';
+import { exportTutors } from '@/lib/exportExcel';
 import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
 import {
@@ -113,6 +114,7 @@ export default function TutorsPage() {
         <CardHeader title={`👩‍🏫 Tutors (${tutors.length})`}>
           <SearchInput value={search} onChange={setSearch} placeholder="🔍 Search name, phone, subject…" />
           <BtnPrimary onClick={() => setModal({open:true})}>+ Add Tutor</BtnPrimary>
+          <ExportButton label="Export Tutors" onExport={() => exportTutors(filtered)} />
         </CardHeader>
         <FilterRow>
           {STATUSES.map(s => <FilterBtn key={s} active={filter===s} onClick={() => setFilter(s)}>{s==='all'?'All':s.replace(/_/g,' ')}</FilterBtn>)}

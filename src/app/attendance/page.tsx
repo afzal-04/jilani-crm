@@ -1,7 +1,8 @@
 'use client';
 // src/app/attendance/page.tsx
 export const dynamic = 'force-dynamic';
-
+import ExportButton from '@/components/ExportButton';
+import { exportAttendance } from '@/lib/exportExcel';
 import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
 import {
@@ -189,6 +190,7 @@ export default function AttendancePage() {
         <CardHeader title={`📅 Attendance Records (${records.length})`}>
           <SearchInput value={search} onChange={setSearch} placeholder="🔍 Search student, tutor…" />
           <BtnPrimary onClick={() => setModal({open:true})}>+ Mark Attendance</BtnPrimary>
+          <ExportButton label="Export Attendance" onExport={() => exportAttendance(filtered)} />
         </CardHeader>
 
         <FilterRow>

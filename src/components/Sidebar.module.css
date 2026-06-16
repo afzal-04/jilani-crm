@@ -2,7 +2,7 @@
 
 .sidebar {
   width: 248px;
-  background: var(--ink);
+  background: #0B1A35;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -13,56 +13,114 @@
   z-index: 50;
 }
 
-.logo { padding: 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
-.logoText { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: .3px; }
+.logo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.logoText { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: .3px; }
 .logoSub  { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
 
-.nav { padding: 14px 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
-
-.navItem {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 14px; border-radius: 10px;
-  cursor: pointer; color: rgba(255,255,255,.62);
-  font-size: 13.5px; font-weight: 500;
-  background: none; border: none; width: 100%;
-  text-align: left; transition: all .15s; position: relative;
+.nav {
+  padding: 12px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
 }
-.navItem:hover { background: rgba(255,255,255,.06); color: #fff; }
-.navActive { background: rgba(200,148,26,.16) !important; color: var(--gold-light) !important; }
-.navIcon { font-size: 17px; width: 20px; text-align: center; }
-
-.navBadge {
-  margin-left: auto; background: var(--blue); color: #fff;
-  font-size: 10.5px; font-weight: 700; padding: 2px 7px;
-  border-radius: 100px; min-width: 20px; text-align: center;
-}
-.navBadgeRed { margin-left: auto; background: var(--red); color: #fff; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 100px; min-width: 20px; text-align: center; }
 
 .sectionLabel {
-  font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,.3);
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,.3);
   text-transform: uppercase; letter-spacing: 1px;
-  padding: 14px 14px 6px;
+  padding: 12px 14px 4px;
 }
 
-.footer { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.08); }
-.userEmail { font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 8px; word-break: break-all; }
+.navItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 9px;
+  cursor: pointer; color: rgba(255,255,255,.62);
+  font-size: 13px; font-weight: 500;
+  background: none; border: none; width: 100%;
+  text-align: left; transition: all .15s;
+  font-family: var(--font);
+}
+.navItem:hover { background: rgba(255,255,255,.06); color: #fff; }
+.navActive {
+  background: rgba(200,148,26,.16) !important;
+  color: #F0C55A !important;
+}
+.navIcon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+
+.navBadge {
+  margin-left: auto;
+  background: #1A6FBF; color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 100px;
+  min-width: 18px; text-align: center;
+}
+.navBadgeRed {
+  margin-left: auto;
+  background: #C0392B; color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 100px;
+  min-width: 18px; text-align: center;
+}
+
+/* ── Footer ── */
+.footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.userInfo {
+  display: flex; align-items: center;
+  gap: 10px; margin-bottom: 10px;
+}
+.userAvatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #1A6FBF, #2a8de0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff;
+}
+.userDetails { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.userEmail {
+  font-size: 11px; color: rgba(255,255,255,.45);
+  word-break: break-all; line-height: 1.3;
+}
+.changePwdBtn {
+  background: none; border: none; cursor: pointer;
+  font-size: 11px; color: #F0C55A;
+  font-family: var(--font); font-weight: 600;
+  text-align: left; padding: 0; transition: opacity .15s;
+}
+.changePwdBtn:hover { opacity: .75; }
+
 .logoutBtn {
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
-  color: rgba(255,255,255,.7); padding: 9px 12px; border-radius: 8px;
-  cursor: pointer; font-size: 12.5px; width: 100%; font-family: var(--font);
-  transition: background .15s;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.7);
+  padding: 9px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 12.5px;
+  width: 100%; font-family: var(--font);
+  transition: background .15s; text-align: center;
 }
 .logoutBtn:hover { background: rgba(255,255,255,.12); }
 
+/* ── Close button (mobile only) ── */
 .closeBtn {
-  display: none; position: absolute; top: 14px; right: 14px;
+  display: none;
+  position: absolute; top: 14px; right: 14px;
   background: rgba(255,255,255,.1); border: none; color: #fff;
-  width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
-  align-items: center; justify-content: center; font-size: 14px;
+  width: 30px; height: 30px; border-radius: 8px;
+  cursor: pointer; align-items: center; justify-content: center;
+  font-size: 14px; z-index: 1;
 }
 
+/* ── Overlay (mobile) ── */
 .overlay { display: none; }
 
+/* ── Mobile ── */
 @media (max-width: 880px) {
   .sidebar {
     position: fixed; top: 0; left: 0; z-index: 300;
@@ -70,7 +128,7 @@
     box-shadow: 6px 0 30px rgba(0,0,0,.3);
   }
   .sidebarOpen { transform: translateX(0); }
-  .closeBtn { display: flex; }
+  .closeBtn    { display: flex; }
   .overlay {
     display: block; position: fixed; inset: 0;
     background: rgba(0,0,0,.5); z-index: 200;

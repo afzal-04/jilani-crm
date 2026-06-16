@@ -1,7 +1,8 @@
 'use client';
 // src/app/parents/page.tsx
 export const dynamic = 'force-dynamic';
-
+import ExportButton from '@/components/ExportButton';
+import { exportParents } from '@/lib/exportExcel';
 import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
 import {
@@ -111,6 +112,7 @@ export default function ParentsPage() {
         <CardHeader title={`👨‍👩‍👧 Parents (${parents.length})`}>
           <SearchInput value={search} onChange={setSearch} placeholder="🔍 Search name, phone, area…" />
           <BtnPrimary onClick={() => setModal({open:true})}>+ Add Parent</BtnPrimary>
+          <ExportButton label="Export Parents" onExport={() => exportParents(filtered)} />
         </CardHeader>
         <FilterRow>
           {STATUSES.map(s => <FilterBtn key={s} active={filter===s} onClick={() => setFilter(s)}>{s==='all'?'All':s.replace(/_/g,' ')}</FilterBtn>)}

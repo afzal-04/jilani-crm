@@ -1,7 +1,8 @@
 'use client';
 // src/app/fees/page.tsx
 export const dynamic = 'force-dynamic';
-
+import ExportButton from '@/components/ExportButton';
+import { exportFees } from '@/lib/exportExcel';
 import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
 import {
@@ -183,6 +184,7 @@ export default function FeesPage() {
         <CardHeader title={`💰 Fee Records (${fees.length})`}>
           <SearchInput value={search} onChange={setSearch} placeholder="🔍 Search tutor, parent, month…" />
           <BtnPrimary onClick={() => setModal({open:true})}>+ Add Record</BtnPrimary>
+          <ExportButton label="Export Fees" onExport={() => exportFees(filtered)} />
         </CardHeader>
 
         {/* Filters */}
