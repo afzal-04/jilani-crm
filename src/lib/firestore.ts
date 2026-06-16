@@ -27,6 +27,20 @@ export interface Parent {
   source?: string; // how they found us
   createdAt?: { seconds: number };
   updatedAt?: { seconds: number };
+  studentName?: string;
+  whatsapp?: string;
+  address?: string;
+  board?: string;
+  school?: string;
+  studentAge?: string;
+  studentGender?: string;
+  preferredTeacherGender?: string;
+  preferredContact?: string;
+  daysPerWeek?: string;
+  duration?: string;
+  timeSlot?: string;
+  wantsDemo?: string;
+  specialNote?: string;
 }
 
 export interface Tutor {
