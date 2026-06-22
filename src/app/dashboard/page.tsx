@@ -12,10 +12,20 @@ import {
 } from '@/components/UI';
 import {
   getParents, getTutors, getFees, getAssignments,
-  getAttendance, getComms, getStaff, getTasks,
-  Parent, Tutor, FeeRecord, Assignment, AttendanceRecord, CommunicationLog, StaffMember, Task,
+  getAttendance, getComms, getStaff, getTasks, getReminders, getExpenses,
+  Parent, Tutor, FeeRecord, Assignment, AttendanceRecord, CommunicationLog, StaffMember, Task, FeeReminder, Expense,
 } from '@/lib/firestore';
 import styles from './dashboard.module.css';
+
+function displayName(r: { name?: string; studentName?: string }): string {
+  return r.name?.trim() || r.studentName?.trim() || 'Unnamed Lead';
+}
+function displayLocation(r: { area?: string; address?: string }): string {
+  return r.area?.trim() || r.address?.trim() || '—';
+}
+
+const today = () => new Date().toISOString().split('T')[0];
+const in2Days = () => { const d = new Date(); d.setDate(d.getDate()+2); return d.toISOString().split('T')[0]; };
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -27,15 +37,17 @@ export default function DashboardPage() {
   const [comms, setComms]       = useState<CommunicationLog[]>([]);
   const [staff, setStaff]       = useState<StaffMember[]>([]);
   const [tasks, setTasks]       = useState<Task[]>([]);
+  const [reminders, setReminders] = useState<FeeReminder[]>([]);
+  const [expenses, setExpenses]   = useState<Expense[]>([]);
   const [loading, setLoading]   = useState(true);
 
   const loadAll = useCallback(async () => {
-    const [p,t,f,c,a,co,s,tk] = await Promise.all([
+    const [p,t,f,c,a,co,s,tk,rm,exp] = await Promise.all([
       getParents(), getTutors(), getFees(), getAssignments(),
-      getAttendance(), getComms(), getStaff(), getTasks(),
+      getAttendance(), getComms(), getStaff(), getTasks(), getReminders(), getExpenses(),
     ]);
     setParents(p); setTutors(t); setFees(f); setClasses(c);
-    setAttendance(a); setComms(co); setStaff(s); setTasks(tk);
+    setAttendance(a); setComms(co); setStaff(s); setTasks(tk); setReminders(rm); setExpenses(exp);
     setLoading(false);
   }, []);
 
@@ -51,7 +63,7 @@ export default function DashboardPage() {
   const totalPaidToTutors = fees.filter(f => f.paymentStatus === 'paid').reduce((s,f) => s+f.tutorFee, 0);
   const totalProfit       = totalFromParents - totalToTutors;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = today();
   const presentToday = attendance.filter(a => a.date === todayStr && a.status === 'present').length;
   const absentToday  = attendance.filter(a => a.date === todayStr && a.status === 'absent').length;
 
@@ -65,27 +77,38 @@ export default function DashboardPage() {
   const attendanceTotal = attendance.filter(a => a.status !== 'holiday').length;
   const attendanceRate  = attendanceTotal > 0 ? Math.round((attendance.filter(a => a.status === 'present').length / attendanceTotal) * 100) : 0;
 
+  // ── Fee reminders ──
+  const alertDate = in2Days();
+  const pendingReminders   = reminders.filter(r => r.status === 'pending');
+  const remindersDueSoon   = pendingReminders.filter(r => r.dueDate <= alertDate && r.dueDate >= todayStr);
+  const remindersOverdue   = pendingReminders.filter(r => r.dueDate < todayStr);
+  const remindersUrgent    = remindersDueSoon.length + remindersOverdue.length;
+
+  // ── Yearly investment ──
+  const currentYear = new Date().getFullYear().toString();
+  const yearlyExpense = expenses
+    .filter(e => e.date && new Date(e.date).getFullYear().toString() === currentYear)
+    .reduce((s,e) => s + (e.amount||0), 0);
+
   const badges: Record<string, number> = {
     '/parents': newParents,
     '/tutors': newTutors,
     '/communications': pendingFollowups,
     '/tasks': overdueTasks,
+    '/reminders': remindersUrgent,
   };
 
-  // Recent activity (mix of parents/tutors)
   const recentActivity = [
     ...parents.map(p => ({...p, _type:'Parent' as const})),
     ...tutors.map(t => ({...t, _type:'Tutor' as const})),
   ].sort((a,b) => (b.createdAt?.seconds??0)-(a.createdAt?.seconds??0)).slice(0,8);
 
-  // Upcoming tasks (next 5, not done, sorted by due date)
   const upcomingTasks = tasks.filter(t => t.status !== 'done')
     .sort((a,b) => (a.dueDate||'').localeCompare(b.dueDate||'')).slice(0,5);
 
   return (
     <AppShell title="Dashboard" onRefresh={loadAll} badges={badges}>
 
-      {/* Top stats */}
       <StatsRow>
         <StatCard icon="👨‍👩‍👧" num={parents.length} label="Total Parents" sub={`${newParents} new leads`} color="blue" />
         <StatCard icon="👩‍🏫" num={tutors.length} label="Total Tutors" sub={`${newTutors} new leads`} color="gold" />
@@ -94,12 +117,11 @@ export default function DashboardPage() {
       </StatsRow>
       <StatsRow>
         <StatCard icon="✅" num={presentToday} label="Present Today" sub={`${absentToday} absent`} color="green" />
-        <StatCard icon="🔔" num={pendingFollowups} label="Follow-ups Due" sub="need callback" color="red" />
+        <StatCard icon="🔔" num={remindersUrgent} label="Fee Reminders Due" sub={`${remindersOverdue.length} overdue`} color="red" />
         <StatCard icon="📝" num={pendingTasks} label="Open Tasks" sub={`${overdueTasks} overdue`} color="red" />
-        <StatCard icon="👥" num={activeStaff} label="Active Staff" sub="team members" color="gold" />
+        <StatCard icon="💸" num={currency(yearlyExpense)} label={`${currentYear} Investment`} sub="total expenses this year" color="gold" />
       </StatsRow>
 
-      {/* Finance strip */}
       <FinanceStrip>
         <FinItem label="💳 Received from Parents" value={currency(totalFromParents)} positive />
         <FinDivider />
@@ -113,6 +135,18 @@ export default function DashboardPage() {
       </FinanceStrip>
 
       {/* Alerts */}
+      {remindersOverdue.length > 0 && (
+        <AlertBox>
+          ⚠️ <strong>{remindersOverdue.length} fee reminder{remindersOverdue.length>1?'s':''}</strong> overdue —
+          <AlertLink onClick={() => router.push('/reminders')}>View Reminders →</AlertLink>
+        </AlertBox>
+      )}
+      {remindersDueSoon.length > 0 && (
+        <AlertBox>
+          🔔 <strong>{remindersDueSoon.length} fee reminder{remindersDueSoon.length>1?'s':''}</strong> due within 2 days —
+          <AlertLink onClick={() => router.push('/reminders')}>View Reminders →</AlertLink>
+        </AlertBox>
+      )}
       {pendingFollowups > 0 && (
         <AlertBox>
           🔔 <strong>{pendingFollowups} follow-up{pendingFollowups>1?'s':''}</strong> pending —
@@ -126,7 +160,6 @@ export default function DashboardPage() {
         </AlertBox>
       )}
 
-      {/* Two-column: recent activity + upcoming tasks */}
       <div className={styles.grid2}>
         <Card>
           <CardHeader title="📋 Recent Registrations" />
@@ -138,9 +171,9 @@ export default function DashboardPage() {
                 {recentActivity.map((r,i) => (
                   <tr key={i}>
                     <td><Badge status={r._type.toLowerCase()} /></td>
-                    <td><strong>{r.name}</strong></td>
-                    <td>{r.phone}</td>
-                    <td>{r.area}</td>
+                    <td><strong>{displayName(r)}</strong></td>
+                    <td>{r.phone || '—'}</td>
+                    <td>{displayLocation(r)}</td>
                     <td><Badge status={r.status} /></td>
                     <td style={{color:'#aaa',fontSize:12}}>{fmtDate(r)}</td>
                   </tr>
@@ -150,6 +183,36 @@ export default function DashboardPage() {
           </TableWrap>
         </Card>
 
+        <Card>
+          <CardHeader title="🔔 Upcoming Fee Reminders" />
+          <TableWrap>
+            <table>
+              <thead><tr><th>Type</th><th>Contact</th><th>Amount</th><th>Due</th></tr></thead>
+              <tbody>
+                {pendingReminders.length === 0 && <Empty colSpan={4} text="No pending reminders. 🎉" />}
+                {pendingReminders
+                  .sort((a,b) => a.dueDate.localeCompare(b.dueDate))
+                  .slice(0,5)
+                  .map(r => {
+                    const isOverdue = r.dueDate < todayStr;
+                    return (
+                      <tr key={r.id}>
+                        <td style={{fontSize:12}}>{r.type === 'collect_from_parent' ? '💳 Collect' : '📤 Pay'}</td>
+                        <td style={{fontSize:13}}>{r.type === 'collect_from_parent' ? r.parentName : r.tutorName}</td>
+                        <td style={{fontWeight:700,fontSize:13}}>{r.amount ? currency(r.amount) : '—'}</td>
+                        <td style={{color: isOverdue ? 'var(--red)' : undefined, fontWeight: isOverdue ? 700 : 400, fontSize:12}}>
+                          {r.dueDate}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </TableWrap>
+        </Card>
+      </div>
+
+      <div className={styles.grid2}>
         <Card>
           <CardHeader title="✅ Upcoming Tasks" />
           <TableWrap>

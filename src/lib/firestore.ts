@@ -196,3 +196,153 @@ export const deleteStaff=(id:string) => deleteDoc(doc(db(),'staff',id));
 
 export const getConfig  = async (): Promise<SiteConfig|null> => { const s=await getDoc(doc(db(),'config','site')); return s.exists() ? s.data() as SiteConfig : null; };
 export const saveConfig = (d:SiteConfig) => setDoc(doc(db(),'config','site'), {...d, updatedAt:serverTimestamp()});
+
+
+
+// ─── ADD THESE TO YOUR EXISTING src/lib/firestore.ts FILE ────────────────────
+// Paste at the bottom of the file (after the Config section)
+
+// ─── New Types ────────────────────────────────────────────────────────────────
+
+export type ExpenseCategory =
+  | 'Rent' | 'Marketing' | 'Internet/Phone' | 'Transport'
+  | 'Stationery' | 'Utilities' | 'Maintenance' | 'Salary/Staff' | 'Other';
+
+export interface Expense {
+  id?: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string;        // YYYY-MM-DD
+  note: string;
+  addedBy: string;
+  createdAt?: { seconds: number };
+}
+
+export interface MonthlyBudget {
+  id?: string;          // document id = month string e.g. "June 2026"
+  month: string;
+  amount: number;
+  updatedAt?: { seconds: number };
+}
+
+export type ReminderType = 'collect_from_parent' | 'pay_to_tutor';
+
+export interface FeeReminder {
+  id?: string;
+  type: ReminderType;
+  assignmentId?: string;
+  feeId?: string;
+  tutorName: string;
+  tutorPhone?: string;
+  parentName: string;
+  parentPhone?: string;
+  amount?: number;
+  dueDate: string;       // YYYY-MM-DD
+  status: 'pending' | 'done';
+  notes?: string;
+  createdAt?: { seconds: number };
+}
+
+// ─── Expenses ─────────────────────────────────────────────────────────────────
+
+export const getExpenses  = async (): Promise<Expense[]>  => snap2arr(await getDocs(query(collection(db(), 'expenses'), orderBy('date','desc'))));
+export const addExpense   = (d: Omit<Expense,'id'|'createdAt'>) => addDoc(collection(db(),'expenses'), {...d, createdAt:serverTimestamp()});
+export const updateExpense= (id:string, d:Partial<Expense>) => updateDoc(doc(db(),'expenses',id), d);
+export const deleteExpense= (id:string) => deleteDoc(doc(db(),'expenses',id));
+
+// ─── Monthly Budget ─────────────────────────────────────────────────────────────
+
+export async function getBudget(month: string): Promise<MonthlyBudget | null> {
+  const s = await getDoc(doc(db(), 'budgets', month));
+  return s.exists() ? ({ id: s.id, ...s.data() } as MonthlyBudget) : null;
+}
+export const setBudget = (month: string, amount: number) =>
+  setDoc(doc(db(), 'budgets', month), { month, amount, updatedAt: serverTimestamp() });
+
+// ─── Fee Reminders ──────────────────────────────────────────────────────────────
+
+export const getReminders  = async (): Promise<FeeReminder[]>  => snap2arr(await getDocs(query(collection(db(), 'reminders'), orderBy('dueDate','asc'))));
+export const addReminder   = (d: Omit<FeeReminder,'id'|'createdAt'>) => addDoc(collection(db(),'reminders'), {...d, createdAt:serverTimestamp()});
+export const updateReminder= (id:string, d:Partial<FeeReminder>) => updateDoc(doc(db(),'reminders',id), d);
+export const deleteReminder= (id:string) => deleteDoc(doc(db(),'reminders',id));
+
+// Helper — add N days to a YYYY-MM-DD date string
+function addDays(dateStr: string, days: number): string {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+// Auto-create both reminders when a new Assignment is created
+// Rule: collect from parent within 5 days of class start;
+//       pay tutor after completing 1 month (30 days) of teaching
+export async function generateRemindersForAssignment(assignment: {
+  id?: string;
+  tutorName: string; tutorPhone?: string;
+  parentName: string; parentPhone?: string;
+  startDate: string;
+  monthlyFeeParent: number;
+  monthlyFeeTutor: number;
+}) {
+  if (!assignment.startDate) return; // can't schedule without a start date
+
+  await addReminder({
+    type: 'collect_from_parent',
+    assignmentId: assignment.id,
+    tutorName: assignment.tutorName,
+    tutorPhone: assignment.tutorPhone,
+    parentName: assignment.parentName,
+    parentPhone: assignment.parentPhone,
+    amount: assignment.monthlyFeeParent,
+    dueDate: addDays(assignment.startDate, 5),
+    status: 'pending',
+    notes: 'Collect first month fee from parent (within 5 days of class start)',
+  });
+
+  await addReminder({
+    type: 'pay_to_tutor',
+    assignmentId: assignment.id,
+    tutorName: assignment.tutorName,
+    tutorPhone: assignment.tutorPhone,
+    parentName: assignment.parentName,
+    parentPhone: assignment.parentPhone,
+    amount: assignment.monthlyFeeTutor,
+    dueDate: addDays(assignment.startDate, 30),
+    status: 'pending',
+    notes: 'Pay tutor after completing 1 month of classes',
+  });
+}
+
+// Auto-create a reminder when a Fee record is marked 'pending'
+export async function generateReminderForFee(fee: {
+  id?: string;
+  tutorName: string; parentName: string;
+  parentFee: number;
+}) {
+  await addReminder({
+    type: 'collect_from_parent',
+    feeId: fee.id,
+    tutorName: fee.tutorName,
+    parentName: fee.parentName,
+    amount: fee.parentFee,
+    dueDate: addDays(new Date().toISOString().split('T')[0], 5),
+    status: 'pending',
+    notes: 'Fee marked pending — follow up for collection',
+  });
+}
+
+// Roll a reminder to its next monthly cycle (used after marking "Done")
+export async function rollReminderToNextMonth(reminder: FeeReminder) {
+  await addReminder({
+    type: reminder.type,
+    assignmentId: reminder.assignmentId,
+    tutorName: reminder.tutorName,
+    tutorPhone: reminder.tutorPhone,
+    parentName: reminder.parentName,
+    parentPhone: reminder.parentPhone,
+    amount: reminder.amount,
+    dueDate: addDays(reminder.dueDate, 30),
+    status: 'pending',
+    notes: reminder.notes,
+  });
+}

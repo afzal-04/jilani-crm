@@ -21,8 +21,12 @@ const ALL_SECTIONS: NavSection[] = [
   { label: 'Operations', items: [
     { href: '/attendance',     icon: '📅', label: 'Attendance'   },
     { href: '/fees',           icon: '💰', label: 'Fees'         },
+    { href: '/reminders',      icon: '🔔', label: 'Fee Reminders'},
     { href: '/communications', icon: '💬', label: 'Comms Log'    },
     { href: '/tasks',          icon: '✅', label: 'Tasks'        },
+  ]},
+  { label: 'Finance', items: [
+    { href: '/expenses', icon: '💸', label: 'Expenses' },
   ]},
   { label: 'Admin', items: [
     { href: '/staff',    icon: '👥', label: 'Staff'    },
@@ -30,7 +34,6 @@ const ALL_SECTIONS: NavSection[] = [
   ]},
 ];
 
-// Role badge colors
 const ROLE_STYLE: Record<UserRole, { bg: string; color: string; label: string }> = {
   owner:   { bg: '#fef3c7', color: '#92400e', label: '👑 Owner'   },
   admin:   { bg: '#e0ecff', color: '#1a52bf', label: '🔐 Admin'   },
@@ -45,8 +48,8 @@ interface Props {
 }
 
 export default function Sidebar({ open, onClose, badges = {} }: Props) {
-  const pathname       = usePathname();
-  const router         = useRouter();
+  const pathname = usePathname();
+  const router   = useRouter();
   const { user, role, signOut } = useAuth();
 
   function go(href: string) { router.push(href); onClose(); }
@@ -56,7 +59,6 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
     router.push('/login');
   }
 
-  // Filter nav sections — only show items the current role can access
   const visibleSections = ALL_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => canAccess(role, item.href)),
@@ -70,13 +72,11 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
       <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 
-        {/* Logo */}
         <div className={styles.logo}>
           <div className={styles.logoText}>📚 Jilani CRM</div>
           <div className={styles.logoSub}>Home Tutor Management</div>
         </div>
 
-        {/* Role badge */}
         <div style={{padding:'8px 16px 4px'}}>
           <span style={{
             display:'inline-block', padding:'4px 10px', borderRadius:100,
@@ -87,7 +87,6 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
           </span>
         </div>
 
-        {/* Nav */}
         <nav className={styles.nav}>
           {visibleSections.map(section => (
             <div key={section.label}>
@@ -104,7 +103,7 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
                     <span className={styles.navIcon}>{item.icon}</span>
                     <span>{item.label}</span>
                     {badge ? (
-                      <span className={item.href === '/communications' ? styles.navBadgeRed : styles.navBadge}>
+                      <span className={item.href === '/communications' || item.href === '/reminders' ? styles.navBadgeRed : styles.navBadge}>
                         {badge}
                       </span>
                     ) : null}
@@ -115,7 +114,6 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
           ))}
         </nav>
 
-        {/* Footer */}
         <div className={styles.footer}>
           <div className={styles.userInfo}>
             <div className={styles.userAvatar}>

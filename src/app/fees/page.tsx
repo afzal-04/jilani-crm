@@ -12,7 +12,7 @@ import {
   FinanceStrip, FinItem, FinDivider, ProfitBox,
   currency, fmtDate,
 } from '@/components/UI';
-import { getFees, addFee, updateFee, deleteFee, FeeRecord } from '@/lib/firestore';
+import { getFees, addFee, updateFee, deleteFee, generateReminderForFee, FeeRecord } from '@/lib/firestore';
 
 const CLASS_LEVELS = ['Nursery','LKG','UKG','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8','Class 9','Class 10 (Board)','Class 11','Class 12 (Board)','Competitive Exam (JEE/NEET)','Competitive Exam (Govt Job)','Summer Classes','Drawing / Art','Music / Singing','Dance','Other'];
 const SUBJECTS = ['Maths','Science','Physics','Chemistry','Biology','English','Hindi','Social Science','Computer Science','Accountancy / Commerce','Economics','JEE Coaching','NEET Coaching','Drawing / Art','Music / Singing','Dance','All Subjects','Other'];
@@ -101,6 +101,15 @@ function FeeModal({ initial, onSave, onClose }: {
           </FormGroup>
         </FormRow>
         <ProfitBox profit={profit} />
+        {form.paymentStatus === 'pending' && (
+          <div style={{
+            display:'flex', alignItems:'center', gap:8,
+            padding:'10px 14px', borderRadius:10,
+            background:'#EAF3FC', border:'1.5px solid #bcd9f5', fontSize:12.5, color:'#1A6FBF',
+          }}>
+            🔔 A follow-up reminder will be auto-created (due in 5 days) to collect this fee.
+          </div>
+        )}
         <FormGroup label="Notes">
           <textarea rows={2} value={form.notes} onChange={e=>f('notes',e.target.value)} placeholder="Any payment notes…" />
         </FormGroup>
@@ -133,17 +142,42 @@ export default function FeesPage() {
 
   async function handleSave(data: typeof EMPTY) {
     if (modal.record?.id) {
+      // ── Editing existing fee record ──
+      const wasNotPending = modal.record.paymentStatus !== 'pending';
       await updateFee(modal.record.id, data);
       setFees(p => p.map(x => x.id===modal.record!.id ? {...x,...data} : x));
+
+      // If status was just CHANGED to 'pending' during edit → create a reminder
+      if (data.paymentStatus === 'pending' && wasNotPending) {
+        try { await generateReminderForFee({ id: modal.record.id, ...data }); }
+        catch (err) { console.error('Failed to auto-generate fee reminder:', err); }
+      }
     } else {
+      // ── Creating NEW fee record ──
       const ref = await addFee(data);
-      setFees(p => [{id:ref.id,...data,createdAt:{seconds:Date.now()/1000}},...p]);
+      const newFee = { id: ref.id, ...data };
+      setFees(p => [{...newFee, createdAt:{seconds:Date.now()/1000}},...p]);
+
+      // If new record is created with status 'pending' → create a reminder
+      if (data.paymentStatus === 'pending') {
+        try { await generateReminderForFee(newFee); }
+        catch (err) { console.error('Failed to auto-generate fee reminder:', err); }
+      }
     }
   }
 
   async function handleStatusChange(id: string, status: PayStatus) {
+    const fee = fees.find(f => f.id === id);
+    const wasNotPending = fee?.paymentStatus !== 'pending';
+
     await updateFee(id, { paymentStatus: status });
     setFees(p => p.map(x => x.id===id ? {...x, paymentStatus:status} : x));
+
+    // If status just changed TO 'pending' via the inline dropdown → create a reminder
+    if (status === 'pending' && wasNotPending && fee) {
+      try { await generateReminderForFee({ ...fee, id }); }
+      catch (err) { console.error('Failed to auto-generate fee reminder:', err); }
+    }
   }
 
   async function handleDelete(id: string) {

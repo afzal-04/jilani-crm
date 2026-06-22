@@ -10,6 +10,16 @@ import styles from './leads.module.css';
 type LeadType = 'all' | 'parents' | 'tutors';
 type Lead = (Parent | Tutor) & { _type: 'parent' | 'tutor' };
 
+// Helper — get display name with fallbacks for different form field names
+function displayName(l: { name?: string; studentName?: string }): string {
+  return l.name?.trim() || l.studentName?.trim() || 'Unnamed Lead';
+}
+
+// Helper — get display area/address with fallbacks
+function displayLocation(l: { area?: string; address?: string }): string {
+  return l.area?.trim() || l.address?.trim() || '—';
+}
+
 const COLUMNS: { key: LeadStatus; label: string; icon: string }[] = [
   { key: 'new',            label: 'New',            icon: '🆕' },
   { key: 'contacted',      label: 'Contacted',      icon: '📞' },
@@ -59,8 +69,6 @@ export default function LeadsPage() {
     }
   }
 
-  const newCount = allLeads.filter(l => l.status === 'new').length;
-
   return (
     <AppShell title="Lead Pipeline" onRefresh={loadAll} badges={{ '/parents': parents.filter(p=>p.status==='new').length, '/tutors': tutors.filter(t=>t.status==='new').length }}>
 
@@ -86,17 +94,17 @@ export default function LeadsPage() {
                 {items.map(lead => (
                   <div key={`${lead._type}-${lead.id}`} className={styles.leadCard}>
                     <div className={styles.cardTop}>
-                      <span className={styles.cardName}>{lead.name}</span>
+                      <span className={styles.cardName}>{displayName(lead)}</span>
                       <span className={styles.cardTypeIcon}>{lead._type === 'parent' ? '👨‍👩‍👧' : '👩‍🏫'}</span>
                     </div>
                     <div className={styles.cardMeta}>
-                      📍 {lead.area || '—'}<br/>
+                      📍 {displayLocation(lead)}<br/>
                       {lead._type === 'parent'
-                        ? <>📚 {(lead as Parent).class} · {(lead as Parent).subject}</>
-                        : <>🎓 {(lead as Tutor).qualification}<br/>📚 {(lead as Tutor).subjects}</>
+                        ? <>📚 {(lead as Parent).class || '—'} · {(lead as Parent).subject || '—'}</>
+                        : <>🎓 {(lead as Tutor).qualification || '—'}<br/>📚 {(lead as Tutor).subjects || '—'}</>
                       }
                     </div>
-                    <div className={styles.cardPhone}>📞 {lead.phone}</div>
+                    <div className={styles.cardPhone}>📞 {lead.phone || '—'}</div>
                     <div className={styles.moveRow}>
                       {NEXT_STATUSES[lead.status].map(next => (
                         <button key={next} className={styles.moveBtn} onClick={() => moveStatus(lead, next)}>

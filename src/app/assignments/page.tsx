@@ -12,6 +12,7 @@ import {
 } from '@/components/UI';
 import {
   getAssignments, addAssignment, updateAssignment, deleteAssignment,
+  generateRemindersForAssignment,
   Assignment, ClassStatus,
 } from '@/lib/firestore';
 
@@ -141,6 +142,22 @@ function AssignmentModal({ initial, onSave, onClose }: {
           <strong style={{fontSize:18}}>{currency(profit)}</strong>
         </div>
 
+        {!initial && form.startDate && (
+          <div style={{
+            display:'flex', alignItems:'flex-start', gap:8,
+            padding:'12px 16px', borderRadius:10,
+            background:'#EAF3FC', border:'1.5px solid #bcd9f5', fontSize:12.5, color:'#1A6FBF',
+          }}>
+            <span style={{fontSize:16}}>🔔</span>
+            <span>
+              Auto reminders will be created: <strong>collect from parent</strong> by{' '}
+              <strong>{new Date(new Date(form.startDate).getTime() + 5*86400000).toLocaleDateString('en-IN')}</strong>, and{' '}
+              <strong>pay tutor</strong> by{' '}
+              <strong>{new Date(new Date(form.startDate).getTime() + 30*86400000).toLocaleDateString('en-IN')}</strong>.
+            </span>
+          </div>
+        )}
+
         <FormGroup label="Notes">
           <textarea rows={2} value={form.notes} onChange={e=>f('notes',e.target.value)} placeholder="Any additional notes about this assignment…" />
         </FormGroup>
@@ -170,11 +187,22 @@ export default function AssignmentsPage() {
 
   async function handleSave(data: typeof EMPTY) {
     if (modal.record?.id) {
+      // ── Editing existing assignment — just update, no new reminders ──
       await updateAssignment(modal.record.id, data);
       setAssignments(p => p.map(x => x.id===modal.record!.id ? {...x,...data} : x));
     } else {
+      // ── Creating NEW assignment ──
       const ref = await addAssignment(data);
-      setAssignments(p => [{id:ref.id,...data,createdAt:{seconds:Date.now()/1000}},...p]);
+      const newAssignment = { id: ref.id, ...data };
+      setAssignments(p => [{...newAssignment, createdAt:{seconds:Date.now()/1000}},...p]);
+
+      // Auto-create fee reminders: collect from parent (+5 days), pay tutor (+30 days)
+      try {
+        await generateRemindersForAssignment(newAssignment);
+      } catch (err) {
+        console.error('Failed to auto-generate reminders:', err);
+        // Don't block the user — assignment is already saved successfully
+      }
     }
   }
 
@@ -194,7 +222,6 @@ export default function AssignmentsPage() {
   const totalRev  = active.reduce((s,a) => s + (a.monthlyFeeParent||0), 0);
   const totalPay  = active.reduce((s,a) => s + (a.monthlyFeeTutor||0), 0);
   const totalProfit = totalRev - totalPay;
-  const totalClassesPerWeek = active.reduce((s,a) => s + (a.classesPerWeek||0), 0);
 
   return (
     <AppShell title="Class Assignments" onRefresh={loadAll}>

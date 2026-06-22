@@ -1,4 +1,3 @@
-
 'use client';
 // src/context/AuthContext.tsx
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -9,13 +8,13 @@ import { getAuthInstance, getDbInstance } from '@/lib/firebase';
 export type UserRole = 'admin' | 'manager' | 'staff' | 'owner';
 
 interface AuthCtx {
-  user:             User | null;
-  role:             UserRole;
-  staffDocId:       string | null;   // Firestore doc ID of the staff member
-  passwordChanged:  boolean;         // false = needs to change temp password
-  loading:          boolean;
-  signOut:          () => Promise<void>;
-  markPasswordChanged: () => Promise<void>; // call after successful password change
+  user:                User | null;
+  role:                UserRole;
+  staffDocId:          string | null;
+  passwordChanged:     boolean;
+  loading:             boolean;
+  signOut:             () => Promise<void>;
+  markPasswordChanged: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx>({
@@ -32,6 +31,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     '/dashboard', '/reports',
     '/leads', '/parents', '/tutors', '/assignments',
     '/fees', '/attendance', '/communications', '/tasks',
+    '/reminders',                          // managers can view fee reminders
     '/change-password', '/settings',
   ],
   staff: [
@@ -41,6 +41,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     '/change-password',
   ],
 };
+// Note: '/expenses' is intentionally NOT in manager or staff lists —
+// only 'owner' and 'admin' (which both use '*') can access it.
 
 export function canAccess(role: UserRole, path: string): boolean {
   const perms = ROLE_PERMISSIONS[role];
@@ -76,10 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const snap = await getDocs(query(collection(db, 'staff'), where('email', '==', email)));
 
       if (snap.empty) {
-        // Not in staff collection = original owner/admin
         setRole('owner');
         setStaffDocId(null);
-        setPasswordChanged(true); // owner never needs to change password
+        setPasswordChanged(true);
         return;
       }
 
@@ -89,19 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setStaffDocId(staffDoc.id);
       setRole(data.status === 'inactive' ? 'staff' : staffRole || 'staff');
-
-      // Check if they still need to change their temporary password
       setPasswordChanged(data.passwordChanged === true);
 
     } catch {
-      // Firestore lookup failed = treat as owner
       setRole('owner');
       setStaffDocId(null);
       setPasswordChanged(true);
     }
   }
 
-  // Called after staff successfully changes password
   async function markPasswordChanged() {
     if (!staffDocId) return;
     try {
