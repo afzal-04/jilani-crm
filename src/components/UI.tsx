@@ -8,7 +8,7 @@ import styles from './UI.module.css';
 export function StatCard({ icon, num, label, sub, color }: { icon: string; num: string | number; label: string; sub: string; color: 'blue'|'gold'|'green'|'red' }) {
   return (
     <div className={`${styles.statCard} ${styles[color]}`}>
-      <div className={styles.statIcon}>{icon}</div>
+      <div className={styles.statIconWrap}>{icon}</div>
       <div className={styles.statNum}>{num}</div>
       <div className={styles.statLabel}>{label}</div>
       <div className={styles.statSub}>{sub}</div>

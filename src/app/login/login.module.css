@@ -1,30 +1,79 @@
-/* src/app/login/login.module.css */
-
+/* login.module.css — Enterprise login */
 .wrap {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #0B1A35, #1A6FBF);
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(59,130,246,.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 10%, rgba(139,92,246,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(245,158,11,.04) 0%, transparent 70%);
   padding: 20px;
 }
-.box {
-  background: #fff; border-radius: 20px; padding: 44px 38px;
-  width: 100%; max-width: 380px; text-align: center;
-  box-shadow: 0 24px 60px rgba(0,0,0,.25);
+.card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 24px;
+  padding: 40px 36px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter: blur(20px);
 }
-.logo { font-size: 40px; margin-bottom: 12px; }
-.box h2 { font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
-.box p { font-size: 13px; color: var(--text-muted); margin-bottom: 26px; }
-.form { display: flex; flex-direction: column; gap: 14px; }
-.group { display: flex; flex-direction: column; gap: 6px; text-align: left; }
-.group label { font-size: 12px; font-weight: 600; color: var(--text); }
+.logo {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue-darker), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #fff; letter-spacing: -1px;
+  margin: 0 auto 18px;
+  box-shadow: 0 8px 20px rgba(59,130,246,.5), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.card h2 {
+  font-size: 21px; font-weight: 800; color: #fff;
+  text-align: center; letter-spacing: -.5px; margin-bottom: 4px;
+}
+.card p {
+  font-size: 12.5px; color: rgba(255,255,255,.35);
+  text-align: center; margin-bottom: 28px; letter-spacing: .1px;
+}
+.form { display: flex; flex-direction: column; gap: 13px; }
+.group { display: flex; flex-direction: column; gap: 5px; }
+.group label {
+  font-size: 10.5px; font-weight: 700;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase; letter-spacing: .8px;
+}
 .group input {
-  padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
-  font-size: 14px; font-family: var(--font); transition: border-color .15s;
+  padding: 11px 14px;
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(255,255,255,.08);
+  border-radius: 10px; font-size: 13.5px;
+  font-family: var(--font); color: #fff; transition: all .15s;
 }
-.group input:focus { outline: none; border-color: var(--blue); }
+.group input::placeholder { color: rgba(255,255,255,.2); }
+.group input:focus {
+  outline: none;
+  border-color: rgba(59,130,246,.5);
+  background: rgba(59,130,246,.07);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
 .form button {
-  padding: 13px; background: linear-gradient(135deg, var(--blue), #2a8de0);
-  color: #fff; border: none; border-radius: 10px; font-size: 14.5px;
-  font-weight: 700; cursor: pointer; font-family: var(--font); margin-top: 4px;
+  padding: 12px; margin-top: 6px;
+  background: linear-gradient(135deg, var(--blue-darker), var(--blue-dark));
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 13.5px; font-weight: 700; cursor: pointer;
+  font-family: var(--font); letter-spacing: -.1px;
+  transition: all .2s;
+  box-shadow: 0 4px 14px rgba(37,99,235,.4), inset 0 1px 0 rgba(255,255,255,.1);
 }
-.form button:disabled { opacity: .65; cursor: not-allowed; }
-.err { color: var(--red); font-size: 13px; }
+.form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37,99,235,.55);
+}
+.form button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.err { color: #FCA5A5; font-size: 12px; text-align: center; }
+/* Divider line at bottom */
+.card::after {
+  content: 'Jilani Home Tutor · Internal CRM';
+  display: block; text-align: center;
+  font-size: 10px; color: rgba(255,255,255,.15);
+  margin-top: 24px; letter-spacing: .5px;
+}

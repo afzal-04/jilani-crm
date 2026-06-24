@@ -4,16 +4,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-top: 4px;
 }
-
 .loadingNote {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-  padding: 16px;
+  text-align: center; color: var(--text-xs); font-size: 13px; padding: 16px;
 }
-
-@media (max-width: 980px) {
-  .grid2 { grid-template-columns: 1fr; }
-}
+@media (max-width: 980px) { .grid2 { grid-template-columns: 1fr; } }

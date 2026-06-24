@@ -9,43 +9,57 @@ interface NavSection { label: string; items: NavItem[]; }
 
 const ALL_SECTIONS: NavSection[] = [
   { label: 'Overview', items: [
-    { href: '/dashboard', icon: '🏠', label: 'Dashboard' },
-    { href: '/reports',   icon: '📊', label: 'Reports'   },
+    { href: '/dashboard', icon: '⬛', label: 'Dashboard'     },
+    { href: '/reports',   icon: '⬛', label: 'Analytics'     },
   ]},
-  { label: 'CRM', items: [
-    { href: '/leads',       icon: '🎯', label: 'Lead Pipeline' },
-    { href: '/parents',     icon: '👨‍👩‍👧', label: 'Parents'       },
-    { href: '/tutors',      icon: '👩‍🏫', label: 'Tutors'         },
-    { href: '/assignments', icon: '📋', label: 'Assignments'    },
+  { label: 'Pipeline', items: [
+    { href: '/leads',       icon: '⬛', label: 'Lead Pipeline' },
+    { href: '/parents',     icon: '⬛', label: 'Parents'        },
+    { href: '/tutors',      icon: '⬛', label: 'Tutors'         },
+    { href: '/assignments', icon: '⬛', label: 'Assignments'    },
   ]},
   { label: 'Operations', items: [
-    { href: '/attendance',     icon: '📅', label: 'Attendance'   },
-    { href: '/fees',           icon: '💰', label: 'Fees'         },
-    { href: '/reminders',      icon: '🔔', label: 'Fee Reminders'},
-    { href: '/communications', icon: '💬', label: 'Comms Log'    },
-    { href: '/tasks',          icon: '✅', label: 'Tasks'        },
+    { href: '/attendance',     icon: '⬛', label: 'Attendance'    },
+    { href: '/fees',           icon: '⬛', label: 'Fees'          },
+    { href: '/reminders',      icon: '⬛', label: 'Reminders'     },
+    { href: '/communications', icon: '⬛', label: 'Comms Log'     },
+    { href: '/tasks',          icon: '⬛', label: 'Tasks'         },
   ]},
   { label: 'Finance', items: [
-    { href: '/expenses', icon: '💸', label: 'Expenses' },
+    { href: '/expenses', icon: '⬛', label: 'Expenses' },
   ]},
   { label: 'Admin', items: [
-    { href: '/staff',    icon: '👥', label: 'Staff'    },
-    { href: '/settings', icon: '⚙️', label: 'Settings' },
+    { href: '/staff',    icon: '⬛', label: 'Staff'    },
+    { href: '/settings', icon: '⬛', label: 'Settings' },
   ]},
 ];
 
-const ROLE_STYLE: Record<UserRole, { bg: string; color: string; label: string }> = {
-  owner:   { bg: '#fef3c7', color: '#92400e', label: '👑 Owner'   },
-  admin:   { bg: '#e0ecff', color: '#1a52bf', label: '🔐 Admin'   },
-  manager: { bg: '#e8f7ee', color: '#157a44', label: '🎯 Manager' },
-  staff:   { bg: '#f0f0f0', color: '#555',    label: '👤 Staff'   },
+// Clean icons using text/emoji
+const NAV_ICONS: Record<string, string> = {
+  '/dashboard':      '🏠',
+  '/reports':        '📊',
+  '/leads':          '🎯',
+  '/parents':        '👨‍👩‍👧',
+  '/tutors':         '👩‍🏫',
+  '/assignments':    '📋',
+  '/attendance':     '📅',
+  '/fees':           '💰',
+  '/reminders':      '🔔',
+  '/communications': '💬',
+  '/tasks':          '✅',
+  '/expenses':       '💸',
+  '/staff':          '👥',
+  '/settings':       '⚙️',
 };
 
-interface Props {
-  open:     boolean;
-  onClose:  () => void;
-  badges?:  Record<string, number>;
-}
+const ROLE_BADGE: Record<UserRole, { label: string; bg: string; color: string }> = {
+  owner:   { label: 'Owner',   bg: 'rgba(245,158,11,.15)', color: '#FCD34D'  },
+  admin:   { label: 'Admin',   bg: 'rgba(59,130,246,.15)', color: '#93C5FD'  },
+  manager: { label: 'Manager', bg: 'rgba(16,185,129,.15)', color: '#6EE7B7'  },
+  staff:   { label: 'Staff',   bg: 'rgba(156,163,175,.15)', color: '#D1D5DB' },
+};
+
+interface Props { open: boolean; onClose: () => void; badges?: Record<string, number>; }
 
 export default function Sidebar({ open, onClose, badges = {} }: Props) {
   const pathname = usePathname();
@@ -53,18 +67,16 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
   const { user, role, signOut } = useAuth();
 
   function go(href: string) { router.push(href); onClose(); }
+  async function handleLogout() { await signOut(); router.push('/login'); }
 
-  async function handleLogout() {
-    await signOut();
-    router.push('/login');
-  }
+  const visibleSections = ALL_SECTIONS.map(s => ({
+    ...s,
+    items: s.items
+      .map(item => ({ ...item, icon: NAV_ICONS[item.href] || '●' }))
+      .filter(item => canAccess(role, item.href)),
+  })).filter(s => s.items.length > 0);
 
-  const visibleSections = ALL_SECTIONS.map(section => ({
-    ...section,
-    items: section.items.filter(item => canAccess(role, item.href)),
-  })).filter(section => section.items.length > 0);
-
-  const roleStyle = ROLE_STYLE[role];
+  const rb = ROLE_BADGE[role];
 
   return (
     <>
@@ -72,28 +84,40 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
       <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 
+        {/* Logo */}
         <div className={styles.logo}>
-          <div className={styles.logoText}>📚 Jilani CRM</div>
-          <div className={styles.logoSub}>Home Tutor Management</div>
+          <div className={styles.logoMark}>JC</div>
+          <div>
+            <div className={styles.logoText}>Jilani CRM</div>
+            <div className={styles.logoSub}>Tutor Management</div>
+          </div>
         </div>
 
-        <div style={{padding:'8px 16px 4px'}}>
+        {/* Role badge */}
+        <div style={{ padding: '8px 14px 2px' }}>
           <span style={{
-            display:'inline-block', padding:'4px 10px', borderRadius:100,
-            fontSize:11, fontWeight:700,
-            background: roleStyle.bg, color: roleStyle.color,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 10px', borderRadius: 100,
+            fontSize: 10.5, fontWeight: 700, letterSpacing: .3,
+            background: rb.bg, color: rb.color,
           }}>
-            {roleStyle.label}
+            <span style={{
+              width: 5, height: 5, borderRadius: '50%',
+              background: rb.color, display: 'inline-block',
+            }} />
+            {rb.label}
           </span>
         </div>
 
+        {/* Nav */}
         <nav className={styles.nav}>
           {visibleSections.map(section => (
             <div key={section.label}>
               <div className={styles.sectionLabel}>{section.label}</div>
               {section.items.map(item => {
-                const active = pathname === item.href || pathname?.startsWith(item.href + '/');
-                const badge  = badges[item.href];
+                const active  = pathname === item.href || pathname?.startsWith(item.href + '/');
+                const badge   = badges[item.href];
+                const isRed   = item.href === '/communications' || item.href === '/reminders';
                 return (
                   <button
                     key={item.href}
@@ -101,9 +125,9 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
                     onClick={() => go(item.href)}
                   >
                     <span className={styles.navIcon}>{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
                     {badge ? (
-                      <span className={item.href === '/communications' || item.href === '/reminders' ? styles.navBadgeRed : styles.navBadge}>
+                      <span className={isRed ? styles.navBadgeRed : styles.navBadge}>
                         {badge}
                       </span>
                     ) : null}
@@ -114,20 +138,21 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
           ))}
         </nav>
 
+        {/* Footer */}
         <div className={styles.footer}>
-          <div className={styles.userInfo}>
+          <div className={styles.userCard}>
             <div className={styles.userAvatar}>
-              {user?.email?.charAt(0).toUpperCase() || '?'}
+              {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div className={styles.userDetails}>
               <div className={styles.userEmail}>{user?.email}</div>
               <button className={styles.changePwdBtn} onClick={() => go('/change-password')}>
-                🔐 Change Password
+                Change password
               </button>
             </div>
           </div>
           <button onClick={handleLogout} className={styles.logoutBtn}>
-            🚪 Logout
+            Sign out
           </button>
         </div>
       </aside>
