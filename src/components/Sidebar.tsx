@@ -17,9 +17,9 @@ const ALL_SECTIONS: NavSection[] = [
     { href: '/parents',     icon: '⬛', label: 'Parents'        },
     { href: '/tutors',      icon: '⬛', label: 'Tutors'         },
     { href: '/assignments', icon: '⬛', label: 'Assignments'    },
+    { href: '/matching', icon: '⬛', label: 'Tutor Matching' },
   ]},
   { label: 'Operations', items: [
-    { href: '/attendance',     icon: '⬛', label: 'Attendance'    },
     { href: '/fees',           icon: '⬛', label: 'Fees'          },
     { href: '/reminders',      icon: '⬛', label: 'Reminders'     },
     { href: '/communications', icon: '⬛', label: 'Comms Log'     },
@@ -42,7 +42,6 @@ const NAV_ICONS: Record<string, string> = {
   '/parents':        '👨‍👩‍👧',
   '/tutors':         '👩‍🏫',
   '/assignments':    '📋',
-  '/attendance':     '📅',
   '/fees':           '💰',
   '/reminders':      '🔔',
   '/communications': '💬',
@@ -50,6 +49,7 @@ const NAV_ICONS: Record<string, string> = {
   '/expenses':       '💸',
   '/staff':          '👥',
   '/settings':       '⚙️',
+  '/matching': '🎯',
 };
 
 const ROLE_BADGE: Record<UserRole, { label: string; bg: string; color: string }> = {

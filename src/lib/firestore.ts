@@ -60,7 +60,9 @@ export interface Assignment {
   tutorId?: string; tutorName: string; tutorPhone: string;
   parentId?: string; parentName: string; parentPhone: string;
   subject: string; classLevel: string;
-  classesPerWeek: number; startDate: string;
+  classesPerWeek: number;
+  hoursPerSession?: number;   // ← ADD THIS LINE
+  startDate: string;
   monthlyFeeParent: number; monthlyFeeTutor: number;
   status: ClassStatus; area: string; notes: string;
   createdAt?: { seconds: number };
@@ -71,6 +73,7 @@ export interface FeeRecord {
   assignmentId?: string;
   tutorName: string; parentName: string;
   subject: string; classLevel: string;
+  hoursPerMonth?: number;      // ← ADD THIS LINE
   parentFee: number; tutorFee: number; profit: number;
   month: string;
   paymentStatus: 'pending' | 'received' | 'paid';

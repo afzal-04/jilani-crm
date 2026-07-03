@@ -30,7 +30,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   manager: [
     '/dashboard', '/reports',
     '/leads', '/parents', '/tutors', '/assignments',
-    '/fees', '/attendance', '/communications', '/tasks',
+    '/fees', '/communications', '/tasks',
     '/reminders',                          // managers can view fee reminders
     '/change-password', '/settings',
   ],

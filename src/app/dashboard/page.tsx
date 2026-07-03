@@ -12,8 +12,8 @@ import {
 } from '@/components/UI';
 import {
   getParents, getTutors, getFees, getAssignments,
-  getAttendance, getComms, getStaff, getTasks, getReminders, getExpenses,
-  Parent, Tutor, FeeRecord, Assignment, AttendanceRecord, CommunicationLog, StaffMember, Task, FeeReminder, Expense,
+  getComms, getStaff, getTasks, getReminders,
+  Parent, Tutor, FeeRecord, Assignment, CommunicationLog, StaffMember, Task, FeeReminder,
 } from '@/lib/firestore';
 import styles from './dashboard.module.css';
 
@@ -33,21 +33,19 @@ export default function DashboardPage() {
   const [tutors, setTutors]     = useState<Tutor[]>([]);
   const [fees, setFees]         = useState<FeeRecord[]>([]);
   const [classes, setClasses]   = useState<Assignment[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [comms, setComms]       = useState<CommunicationLog[]>([]);
   const [staff, setStaff]       = useState<StaffMember[]>([]);
   const [tasks, setTasks]       = useState<Task[]>([]);
   const [reminders, setReminders] = useState<FeeReminder[]>([]);
-  const [expenses, setExpenses]   = useState<Expense[]>([]);
   const [loading, setLoading]   = useState(true);
 
   const loadAll = useCallback(async () => {
-    const [p,t,f,c,a,co,s,tk,rm,exp] = await Promise.all([
+    const [p,t,f,c,co,s,tk,rm] = await Promise.all([
       getParents(), getTutors(), getFees(), getAssignments(),
-      getAttendance(), getComms(), getStaff(), getTasks(), getReminders(), getExpenses(),
+      getComms(), getStaff(), getTasks(), getReminders(),
     ]);
     setParents(p); setTutors(t); setFees(f); setClasses(c);
-    setAttendance(a); setComms(co); setStaff(s); setTasks(tk); setReminders(rm); setExpenses(exp);
+    setComms(co); setStaff(s); setTasks(tk); setReminders(rm);
     setLoading(false);
   }, []);
 
@@ -64,8 +62,6 @@ export default function DashboardPage() {
   const totalProfit       = totalFromParents - totalToTutors;
 
   const todayStr = today();
-  const presentToday = attendance.filter(a => a.date === todayStr && a.status === 'present').length;
-  const absentToday  = attendance.filter(a => a.date === todayStr && a.status === 'absent').length;
 
   const pendingFollowups = comms.filter(c => c.followUpStatus === 'pending').length;
   const pendingTasks = tasks.filter(t => t.status !== 'done').length;
@@ -74,8 +70,6 @@ export default function DashboardPage() {
   const activeStaff = staff.filter(s => s.status === 'active').length;
 
   const conversionRate = parents.length > 0 ? Math.round((parents.filter(p => p.status === 'converted').length / parents.length) * 100) : 0;
-  const attendanceTotal = attendance.filter(a => a.status !== 'holiday').length;
-  const attendanceRate  = attendanceTotal > 0 ? Math.round((attendance.filter(a => a.status === 'present').length / attendanceTotal) * 100) : 0;
 
   // ── Fee reminders ──
   const alertDate = in2Days();
@@ -84,11 +78,6 @@ export default function DashboardPage() {
   const remindersOverdue   = pendingReminders.filter(r => r.dueDate < todayStr);
   const remindersUrgent    = remindersDueSoon.length + remindersOverdue.length;
 
-  // ── Yearly investment ──
-  const currentYear = new Date().getFullYear().toString();
-  const yearlyExpense = expenses
-    .filter(e => e.date && new Date(e.date).getFullYear().toString() === currentYear)
-    .reduce((s,e) => s + (e.amount||0), 0);
 
   const badges: Record<string, number> = {
     '/parents': newParents,
@@ -116,10 +105,8 @@ export default function DashboardPage() {
         <StatCard icon="🏦" num={currency(totalProfit)} label="Net Profit" sub="all confirmed fees" color="blue" />
       </StatsRow>
       <StatsRow>
-        <StatCard icon="✅" num={presentToday} label="Present Today" sub={`${absentToday} absent`} color="green" />
         <StatCard icon="🔔" num={remindersUrgent} label="Fee Reminders Due" sub={`${remindersOverdue.length} overdue`} color="red" />
         <StatCard icon="📝" num={pendingTasks} label="Open Tasks" sub={`${overdueTasks} overdue`} color="red" />
-        <StatCard icon="💸" num={currency(yearlyExpense)} label={`${currentYear} Investment`} sub="total expenses this year" color="gold" />
       </StatsRow>
 
       <FinanceStrip>
@@ -130,8 +117,6 @@ export default function DashboardPage() {
         <FinItem label="🏦 Net Profit" value={currency(totalProfit)} positive={totalProfit >= 0} />
         <FinDivider />
         <FinItem label="📊 Conversion Rate" value={`${conversionRate}%`} positive />
-        <FinDivider />
-        <FinItem label="📈 Attendance Rate" value={`${attendanceRate}%`} positive />
       </FinanceStrip>
 
       {/* Alerts */}
