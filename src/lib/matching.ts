@@ -1,27 +1,42 @@
 // src/lib/matching.ts
-// Tutor-Parent matching engine — scores tutors against a parent's requirements.
-// Think of this like a SQL Server scoring query done in-memory (dataset is small).
+// Tutor-Parent matching engine.
+//
+// Class eligibility is now a HARD FILTER (like a WHERE clause) — a tutor who
+// cannot teach the required class is excluded entirely, not just down-scored.
+// Location + Subject remain WEIGHTED scoring factors (like ORDER BY columns)
+// among the eligible tutors.
 
 import { Parent, Tutor } from './firestore';
 
-// ── Stopwords — common words that appear in almost every address, so they add
-//    noise to location matching (like excluding "the", "a" from full-text search) ──
+// ── Known area lookup list (acts like a reference/dimension table) ───────────
+const KNOWN_AREAS = [
+  'shankar nagar', 'civil lines', 'pandri', 'telibandha', 'tatibandh',
+  'devendra nagar', 'raipur station road', 'pachpedi naka', 'avanti vihar',
+  'byron bazar', 'mowa', 'khamardih', 'fafadih', 'rajendra nagar',
+  'kabir nagar', 'gopal nagar', 'new rajendra nagar', 'shanti nagar',
+  'daganiya', 'sundar nagar', 'ddu nagar', 'nit', 'gudhiyari', 'kota',
+  'vidhan sabha road', 'ring road', 'jail road', 'gogaon', 'saddu',
+  'katora talab', 'ganj para', 'moudhapara', 'lakhe nagar', 'amlidih',
+  'urla', 'sarona', 'gondwara', 'khamtarai', 'bhatagaon', 'birgaon',
+];
+
+function findKnownAreas(text: string): string[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  return KNOWN_AREAS.filter(area => lower.includes(area));
+}
+
 const STOPWORDS = new Set([
   'raipur', 'chhattisgarh', 'cg', 'near', 'road', 'nagar', 'colony',
   'the', 'and', 'in', 'of', 'at', 'behind', 'opposite', 'street',
   'india', 'district', 'city', 'area', 'front',
 ]);
 
-// Tokenize an address/area string into normalized words
 function tokenize(text: string): string[] {
   if (!text) return [];
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/i)
-    .filter(w => w.length > 2 && !STOPWORDS.has(w));
+  return text.toLowerCase().split(/[^a-z0-9]+/i).filter(w => w.length > 2 && !STOPWORDS.has(w));
 }
 
-// Jaccard-like overlap score between two token sets (0 to 1)
 function tokenOverlapScore(a: string[], b: string[]): number {
   if (a.length === 0 || b.length === 0) return 0;
   const setA = new Set(a);
@@ -32,111 +47,162 @@ function tokenOverlapScore(a: string[], b: string[]): number {
   return union === 0 ? 0 : common / union;
 }
 
-// ── Individual scoring functions (each returns 0–100) ────────────────────────
+// ── Location scoring ───────────────────────────────────────────────────────────
 
-function locationScore(parent: Parent, tutor: Tutor): number {
-  const parentTokens = [
-    ...tokenize(parent.area || ''),
-    ...tokenize((parent as any).address || ''),
-  ];
-  const tutorTokens = [
-    ...tokenize(tutor.area || ''),
-    ...tokenize((tutor as any).address || ''),
-  ];
-  const overlap = tokenOverlapScore(parentTokens, tutorTokens);
-  return Math.round(overlap * 100);
+function locationScore(parent: Parent, tutor: Tutor): { score: number; matchedArea?: string } {
+  const parentText = `${parent.area || ''} ${(parent as any).address || ''}`;
+  const tutorText  = `${(tutor as any).area || ''} ${(tutor as any).address || ''}`;
+
+  const parentAreas = findKnownAreas(parentText);
+  const tutorAreas   = findKnownAreas(tutorText);
+
+  if (parentAreas.length > 0 && tutorAreas.length > 0) {
+    const overlap = parentAreas.filter(a => tutorAreas.includes(a));
+    if (overlap.length > 0) return { score: 100, matchedArea: overlap[0] };
+    const fallback = tokenOverlapScore(tokenize(parentText), tokenize(tutorText));
+    return { score: Math.round(fallback * 40) };
+  }
+
+  const fallback = tokenOverlapScore(tokenize(parentText), tokenize(tutorText));
+  return { score: Math.round(fallback * 70) };
+}
+
+// ── Subject scoring ────────────────────────────────────────────────────────────
+
+const SUBJECT_SYNONYMS: Record<string, string[]> = {
+  'maths': ['mathematics', 'math'],
+  'science': ['physics', 'chemistry', 'biology'],
+  'social science': ['sst', 'social studies', 'history', 'geography', 'civics'],
+  'computer science': ['computer', 'coding', 'programming'],
+};
+
+function normalizeText(s: string): string {
+  return s.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 function subjectScore(parent: Parent, tutor: Tutor): number {
-  const parentSubject = (parent.subject || '').toLowerCase().trim();
-  if (!parentSubject) return 0;
-  const tutorSubjects = (tutor.subjects || '').toLowerCase();
+  const parentSubject = normalizeText(parent.subject || '');
+  if (!parentSubject) return 50; // no requirement specified — neutral, don't penalize
+
+  const tutorSubjects = normalizeText(tutor.subjects || '');
+  if (!tutorSubjects) return 0;
 
   if (tutorSubjects.includes('all subjects')) return 100;
   if (tutorSubjects.includes(parentSubject)) return 100;
 
-  // Partial match — e.g. parent wants "Physics", tutor lists "Science, Physics, Chemistry"
-  const parentWords = parentSubject.split(/\s+/);
-  const anyPartial = parentWords.some(w => w.length > 2 && tutorSubjects.includes(w));
-  return anyPartial ? 60 : 0;
+  for (const [key, synonyms] of Object.entries(SUBJECT_SYNONYMS)) {
+    const group = [key, ...synonyms];
+    const parentInGroup = group.some(g => parentSubject.includes(g));
+    const tutorInGroup   = group.some(g => tutorSubjects.includes(g));
+    if (parentInGroup && tutorInGroup) return 90;
+  }
+
+  const parentWords = parentSubject.split(' ').filter(w => w.length > 2);
+  const anyPartial = parentWords.some(w => tutorSubjects.includes(w));
+  return anyPartial ? 65 : 0;
 }
 
-function classScore(parent: Parent, tutor: Tutor): number {
+// ── Class eligibility — HARD FILTER, not a soft score ─────────────────────────
+// Returns true/false: can this tutor actually teach the parent's required class?
+// Fixed bug: now checks ALL ranges in tutor.classes (e.g. "Class 6-8, Class 9-10"),
+// not just the first one — like changing a single WHERE clause into
+// WHERE Range1Match=1 OR Range2Match=1 OR Range3Match=1 ...
+
+export function isClassEligible(parent: Parent, tutor: Tutor): boolean {
   const parentClass = (parent.class || '').toLowerCase().trim();
-  if (!parentClass) return 0;
+  if (!parentClass) return true; // no requirement specified — don't block
+
   const tutorClasses = (tutor.classes || '').toLowerCase();
+  if (!tutorClasses) return false; // tutor listed nothing — can't confirm eligibility
 
-  if (tutorClasses.includes(parentClass)) return 100;
+  if (tutorClasses.includes(parentClass)) return true;
 
-  // Rough band matching — e.g. tutor says "Class 6-8" and parent wants "Class 7"
   const classNum = parseInt(parentClass.replace(/\D/g, ''), 10);
   if (!isNaN(classNum)) {
-    const rangeMatch = tutorClasses.match(/(\d+)\s*[-–—to]+\s*(\d+)/);
-    if (rangeMatch) {
-      const lo = parseInt(rangeMatch[1], 10);
-      const hi = parseInt(rangeMatch[2], 10);
-      if (classNum >= lo && classNum <= hi) return 90;
+    // Check EVERY range mentioned (not just the first) — e.g. "6-8, 9-10, 11-12"
+    const rangeMatches = [...tutorClasses.matchAll(/(\d+)\s*[-–—to]+\s*(\d+)/g)];
+    for (const m of rangeMatches) {
+      const lo = parseInt(m[1], 10);
+      const hi = parseInt(m[2], 10);
+      if (classNum >= lo && classNum <= hi) return true;
+    }
+    // Pre-primary special case
+    if (['nursery','lkg','ukg'].some(p => parentClass.includes(p)) &&
+        ['nursery','lkg','ukg','pre-primary','pre primary'].some(p => tutorClasses.includes(p))) {
+      return true;
     }
   }
-  return 0;
+  return false;
 }
+
+// Kept for the score breakdown display (100 if eligible, 0 if not — binary now)
+function classScore(parent: Parent, tutor: Tutor): number {
+  return isClassEligible(parent, tutor) ? 100 : 0;
+}
+
+// ── Gender preference (soft constraint) ────────────────────────────────────────
 
 function genderScore(parent: Parent, tutor: Tutor): number {
   const pref = ((parent as any).preferredTeacherGender || parent.preferredGender || '').toLowerCase();
-  if (!pref || pref === 'no preference') return 100; // no preference = full score, doesn't penalize
-  return pref === (tutor.gender || '').toLowerCase() ? 100 : 30; // not a hard blocker, just a lower score
+  if (!pref || pref.includes('no preference')) return 100;
+  return pref === (tutor.gender || '').toLowerCase() ? 100 : 40;
 }
 
 // ── Composite match result ────────────────────────────────────────────────────
 
 export interface MatchResult {
   tutor: Tutor;
-  totalScore: number;       // 0–100 weighted composite
-  breakdown: {
-    location: number;
-    subject: number;
-    classLevel: number;
-    gender: number;
-  };
-  reasons: string[];        // human-readable explanation chips
+  totalScore: number;
+  breakdown: { location: number; subject: number; classLevel: number; gender: number; };
+  reasons: string[];
 }
 
-// Weights — tune these if you want location to matter more/less
-const WEIGHTS = {
-  location: 0.45,
-  subject:  0.35,
-  classLevel: 0.15,
-  gender:   0.05,
-};
+// Class eligibility is now a filter, so remaining weights are re-distributed
+// across location + subject + gender (like removing a column from ORDER BY
+// and boosting the others proportionally).
+const WEIGHTS = { location: 0.50, subject: 0.40, gender: 0.10 };
 
 export function matchTutorsForParent(parent: Parent, tutors: Tutor[]): MatchResult[] {
-  const results: MatchResult[] = tutors
-    .filter(t => t.status !== 'closed') // exclude rejected/closed tutor leads
+  const eligibleTutors = tutors.filter(t => t.status !== 'closed' && isClassEligible(parent, t));
+
+  // Fallback: if literally nobody is eligible for that exact class, show the
+  // full pool anyway (better than an empty screen) but flag it clearly.
+  const pool = eligibleTutors.length > 0 ? eligibleTutors : tutors.filter(t => t.status !== 'closed');
+  const noEligibleTutorFound = eligibleTutors.length === 0;
+
+  return pool
     .map(tutor => {
-      const location   = locationScore(parent, tutor);
-      const subject     = subjectScore(parent, tutor);
-      const classLevel  = classScore(parent, tutor);
-      const gender      = genderScore(parent, tutor);
+      const loc         = locationScore(parent, tutor);
+      const subject      = subjectScore(parent, tutor);
+      const classLevel   = classScore(parent, tutor);
+      const gender       = genderScore(parent, tutor);
 
       const totalScore = Math.round(
-        location   * WEIGHTS.location +
-        subject     * WEIGHTS.subject +
-        classLevel  * WEIGHTS.classLevel +
-        gender      * WEIGHTS.gender
+        loc.score * WEIGHTS.location +
+        subject    * WEIGHTS.subject +
+        gender     * WEIGHTS.gender
       );
 
       const reasons: string[] = [];
-      if (location >= 50)  reasons.push(`📍 Location match (${location}%)`);
-      if (location < 50 && location > 0) reasons.push(`📍 Partial location match`);
-      if (location === 0)  reasons.push(`📍 No location overlap`);
-      if (subject === 100)  reasons.push(`📚 Exact subject match`);
-      else if (subject > 0) reasons.push(`📚 Related subject`);
-      if (classLevel >= 90) reasons.push(`🎓 Class level match`);
-      if (gender === 100 && ((parent as any).preferredTeacherGender)) reasons.push(`⚧ Gender preference met`);
 
-      return { tutor, totalScore, breakdown: { location, subject, classLevel, gender }, reasons };
+      if (noEligibleTutorFound) reasons.push(`⚠️ No tutor confirmed for this class — showing closest`);
+
+      if (loc.matchedArea)      reasons.push(`📍 Same area: ${loc.matchedArea}`);
+      else if (loc.score >= 40) reasons.push(`📍 Nearby location`);
+      else if (loc.score > 0)   reasons.push(`📍 Weak location match`);
+      else                       reasons.push(`📍 No location match`);
+
+      if (subject === 100)      reasons.push(`📚 Exact subject match`);
+      else if (subject >= 90)   reasons.push(`📚 Related subject`);
+      else if (subject >= 65)   reasons.push(`📚 Partial subject match`);
+      else if (subject === 50)  reasons.push(`📚 No subject specified`);
+
+      reasons.push(classLevel === 100 ? `🎓 Eligible for this class` : `🎓 Not confirmed for this class`);
+
+      if (gender === 100 && (parent as any).preferredTeacherGender && !(parent as any).preferredTeacherGender.includes('preference'))
+        reasons.push(`⚧ Gender preference met`);
+
+      return { tutor, totalScore, breakdown: { location: loc.score, subject, classLevel, gender }, reasons };
     })
     .sort((a, b) => b.totalScore - a.totalScore);
-
-  return results;
 }

@@ -146,11 +146,13 @@ export default function MatchingPage() {
   useEffect(() => { loadAll(); }, [loadAll]);
 
   // Converted parents who don't yet have an active/paused assignment
+  // Matching queue = ONLY parents with status 'contacted' — like WHERE Status = 'Contacted'.
+  // Once matched (moved to an assignment) they naturally drop out of this list.
   const unmatchedParents = useMemo(() => {
     const assignedParentIds = new Set(assignments.filter(a => a.status !== 'completed').map(a => a.parentId).filter(Boolean));
     const assignedNames = new Set(assignments.filter(a => a.status !== 'completed').map(a => a.parentName));
     return parents.filter(p =>
-      p.status === 'converted' &&
+      p.status === 'contacted' &&
       !assignedParentIds.has(p.id) &&
       !assignedNames.has(p.name || (p as any).studentName || '')
     );
@@ -182,7 +184,7 @@ export default function MatchingPage() {
     <AppShell title="Tutor Matching" onRefresh={loadAll}>
 
       <StatsRow>
-        <StatCard icon="🎯" num={unmatchedParents.length} label="Awaiting Match" sub="converted, no tutor yet" color="gold" />
+        <StatCard icon="🎯" num={unmatchedParents.length} label="Awaiting Match" sub="contacted, no tutor yet" color="gold" />
         <StatCard icon="👩‍🏫" num={tutors.filter(t=>t.status!=='closed').length} label="Available Tutors" sub="active pool" color="blue" />
         <StatCard icon="✅" num={assignments.filter(a=>a.status==='active').length} label="Active Matches" sub="currently teaching" color="green" />
         <StatCard icon="📊" num={parents.filter(p=>p.status==='converted').length} label="Total Converted" sub="all-time" color="red" />
@@ -255,7 +257,7 @@ export default function MatchingPage() {
                       <td><ScoreBar score={m.totalScore} /></td>
                       <td style={{fontSize:11}}>
                         <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                          {m.reasons.slice(0,2).map((r,i) => <span key={i} style={{color:'var(--text-muted)'}}>{r}</span>)}
+                          {m.reasons.slice(0,3).map((r,i) => <span key={i} style={{color:'var(--text-muted)'}}>{r}</span>)}
                         </div>
                       </td>
                       <td>
