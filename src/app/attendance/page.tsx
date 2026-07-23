@@ -192,7 +192,7 @@ export default function AttendancePage() {
           <BtnPrimary onClick={() => setModal({open:true})}>+ Mark Attendance</BtnPrimary>
           <ExportButton label="Export Attendance" onExport={() => exportAttendance(filtered)} />
         </CardHeader>
-
+    
         <FilterRow>
           <span style={{fontSize:12,fontWeight:600,color:'var(--text-muted)'}}>Date:</span>
           {([['all','All Time'],['today','Today'],['week','This Week']] as [string,string][]).map(([k,l]) => (
