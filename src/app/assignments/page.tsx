@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import AppShell from '@/components/AppShell';
+import ExportButton from '@/components/ExportButton';
+import { exportAssignments } from '@/lib/exportExcel';
 import {
   Modal, ModalForm, FormRow, FormGroup, ModalFooter,
   BtnPrimary, BtnSecondary, BtnGold, currency,
@@ -63,6 +65,13 @@ function AssignmentRow({ a, onStatus, onDelete, onEdit, muted=false }: { a: Assi
 
   return (
     <div className={['group relative grid grid-cols-12 items-center gap-4 rounded-xl border border-black/[0.05] bg-white px-4 py-3.5 shadow-[0_1px_2px_oklch(0.14_0.03_265/0.03)] transition-all duration-200',
+      // While the status menu is open, lift this row's stacking order above its
+      // siblings. Without this, `hover:-translate-y-0.5` below creates a new
+      // stacking context on hover (any transform does), which traps the menu's
+      // z-30 inside this row — so the row *after* it (later in the DOM, painted
+      // on top by default) covers the bottom of the dropdown and hides
+      // "Completed". Explicit z-index on the row wins regardless of transform.
+      menuOpen ? 'z-30' : 'z-0',
       muted ? 'opacity-70 hover:opacity-100' : 'hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-16px_oklch(0.14_0.03_265/0.3)]'].join(' ')}>
 
       <div className="col-span-12 flex items-center gap-3 md:col-span-3">
@@ -391,6 +400,7 @@ export default function AssignmentsPage() {
             })}
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <ExportButton label="Export" onExport={() => exportAssignments(filtered)} />
             <button type="button" onClick={()=>setNewMonthModal(true)}
               className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12.5px] font-semibold text-[oklch(0.35_0.09_70)] transition hover:opacity-90"
               style={{ background:'linear-gradient(135deg, oklch(0.9 0.14 88) 0%, oklch(0.82 0.17 78) 100%)', boxShadow:'0 8px 24px -12px oklch(0.78 0.17 75 / 0.7)' }}>
