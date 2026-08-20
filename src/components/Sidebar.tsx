@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, canAccess, UserRole } from '@/context/AuthContext';
 import {
   Home, BarChart3, Target, Users, GraduationCap, ClipboardList,
-  Wallet, Bell, MessageCircle, CheckSquare, TrendingDown, UsersRound,
+  Wallet, Bell, MessageCircle, CheckSquare, TrendingDown,TrendingUp, UsersRound,
   Settings, KeyRound, LogOut, Wand2, type LucideIcon,
 } from 'lucide-react';
 
@@ -32,6 +32,7 @@ const GROUPS: NavGroup[] = [
   ]},
   { label: 'Finance', items: [
     { label: 'Expenses', href: '/expenses', icon: TrendingDown },
+    { label: 'Incomes', href: '/income', icon: TrendingUp },
   ]},
   { label: 'Admin', items: [
     { label: 'Staff',    href: '/staff',    icon: UsersRound },

@@ -349,3 +349,23 @@ export async function rollReminderToNextMonth(reminder: FeeReminder) {
     notes: reminder.notes,
   });
 }
+// ─── Income ───────────────────────────────────────────────────────────────────
+
+export type IncomeCategory =
+  | 'Referral Bonus' | 'Registration Fee' | 'Material/Book Sale'
+  | 'Late Fee' | 'Donation/Grant' | 'Other';
+
+export interface Income {
+  id?: string;
+  category: IncomeCategory;
+  amount: number;
+  date: string;        // YYYY-MM-DD
+  note: string;
+  addedBy: string;
+  createdAt?: { seconds: number };
+}
+
+export const getIncomes  = async (): Promise<Income[]>  => snap2arr(await getDocs(query(collection(db(), 'income'), orderBy('date','desc'))));
+export const addIncome   = (d: Omit<Income,'id'|'createdAt'>) => addDoc(collection(db(),'income'), {...d, createdAt:serverTimestamp()});
+export const updateIncome= (id:string, d:Partial<Income>) => updateDoc(doc(db(),'income',id), d);
+export const deleteIncome= (id:string) => deleteDoc(doc(db(),'income',id));
