@@ -9,7 +9,9 @@ import { currency } from '@/components/UI';
 import {
   getParents, getTutors, getFees, getAssignments,
   getComms, getStaff, getTasks, getReminders,
+  getExpenses, getIncomes,
   Parent, Tutor, FeeRecord, Assignment, CommunicationLog, StaffMember, Task, FeeReminder,
+  Expense, Income,
 } from '@/lib/firestore';
 import {
   Users, GraduationCap, ClipboardList, TrendingUp, Bell, FileText, UsersRound,
@@ -156,16 +158,20 @@ export default function DashboardPage() {
   const [tasks, setTasks]       = useState<Task[]>([]);
   const [reminders, setReminders] = useState<FeeReminder[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes]   = useState<Income[]>([]);
 
   const loadAll = useCallback(async () => {
-    const [p,t,f,a,co,s,tk,rm] = await Promise.all([
-      getParents(), getTutors(), getFees(), getAssignments(),
-      getComms(), getStaff(), getTasks(), getReminders(),
-    ]);
-    setParents(p); setTutors(t); setFees(f); setAssignments(a);
-    setComms(co); setStaff(s); setTasks(tk); setReminders(rm);
-    setLoading(false);
-  }, []);
+  const [p,t,f,a,co,s,tk,rm,ex,inc] = await Promise.all([
+    getParents(), getTutors(), getFees(), getAssignments(),
+    getComms(), getStaff(), getTasks(), getReminders(),
+    getExpenses(), getIncomes(),
+  ]);
+  setParents(p); setTutors(t); setFees(f); setAssignments(a);
+  setComms(co); setStaff(s); setTasks(tk); setReminders(rm);
+  setExpenses(ex); setIncomes(inc);
+  setLoading(false);
+}, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -178,11 +184,16 @@ export default function DashboardPage() {
   const activeClasses = assignments.filter(a => a.status === 'active').length;
 
   const confirmed = fees.filter(f => f.paymentStatus !== 'pending');
-  const totalFromParents = confirmed.reduce((s,f) => s+(f.parentFee||0), 0);
-  const totalToTutors    = confirmed.reduce((s,f) => s+(f.tutorFee||0), 0);
+  const totalFromParents  = confirmed.reduce((s,f) => s+(f.parentFee||0), 0);
+  const totalToTutors     = confirmed.reduce((s,f) => s+(f.tutorFee||0), 0);
   const totalPaidToTutors = fees.filter(f=>f.paymentStatus==='paid').reduce((s,f)=>s+(f.tutorFee||0),0);
-  const totalProfit      = totalFromParents - totalToTutors;
-  const pendingFeesCount = fees.filter(f => f.paymentStatus === 'pending').length;
+  const pendingFeesCount  = fees.filter(f => f.paymentStatus === 'pending').length;
+
+  const totalExpenses = expenses.reduce((s,e) => s+(e.amount||0), 0);
+  const totalIncome   = incomes.reduce((s,e) => s+(e.amount||0), 0);
+
+// Net profit = (received from parents + extra income) - (tutor fees due + expenses)
+const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExpenses);
 
   const pendingTasks = tasks.filter(t => t.status !== 'done').length;
   const overdueTasks = tasks.filter(t => t.status !== 'done' && t.dueDate && t.dueDate < todayStr).length;
@@ -235,17 +246,16 @@ export default function DashboardPage() {
       ...(profitDelta.delta ? { delta: profitDelta.delta, trend: profitDelta.trend, spark: monthlyRevenue.length>=2 ? monthlyRevenue : undefined } : {}) },
     { label: 'Pending Fees', value: String(pendingFeesCount), sub: 'awaiting payment', icon: FileText, accent: 'gold' },
     { label: 'Fee Reminders', value: String(pendingReminders.length), sub: `${overdueReminders.length} overdue`, icon: Bell, accent: 'red' },
-    { label: 'Open Tasks', value: String(pendingTasks), sub: `${overdueTasks} overdue`, icon: FileText, accent: 'red' },
-    { label: 'Active Staff', value: String(activeStaff), sub: 'team members', icon: UsersRound, accent: 'gold' },
+    
   ];
 
   const financeItems = [
-    { label: 'Received', value: currency(totalFromParents), tone: 'green' as const, sub: 'from parents' },
-    { label: 'Tutor Fee Due', value: currency(totalToTutors), tone: 'red' as const, sub: `Paid ${currency(totalPaidToTutors)}` },
-    { label: 'Net Profit', value: currency(totalProfit), tone: (totalProfit>=0?'green':'red') as 'green'|'red', sub: 'this cycle' },
-    { label: 'Conversion', value: `${conversionRate}%`, tone: 'neutral' as const, sub: 'lead → parent' },
-    { label: 'Open Tasks', value: String(pendingTasks), tone: 'neutral' as const, sub: `${overdueTasks} overdue` },
-  ];
+  { label: 'Received', value: currency(totalFromParents), tone: 'green' as const, sub: 'from parents' },
+  { label: 'Tutor Fee Due', value: currency(totalToTutors), tone: 'red' as const, sub: `Paid ${currency(totalPaidToTutors)}` },
+  { label: 'Expenses', value: currency(totalExpenses), tone: 'red' as const, sub: `${expenses.length} entries` },
+  { label: 'Income', value: currency(totalIncome), tone: 'green' as const, sub: `${incomes.length} entries` },
+  { label: 'Net Profit', value: currency(totalProfit), tone: (totalProfit>=0?'green':'red') as 'green'|'red', sub: 'this cycle' },
+];
 
   // Recent registrations — real, mixed parents+tutors sorted by date
   const recentActivity = [
@@ -302,7 +312,7 @@ export default function DashboardPage() {
                 </span>
               )}
             </div>
-            <p className="mt-2 text-[13px] text-white/55">Net profit across all confirmed fees.</p>
+            <p className="mt-2 text-[13px] text-white/55">Net Profit = (Received + Income) − (Tutor Fees Due + Expenses).</p>
 
             {totalFromParents + totalToTutors > 0 && (
               <div className="mt-6 max-w-md">
