@@ -18,7 +18,7 @@ import {
 } from '@/lib/firestore';
 import {
   Search, Plus, CalendarPlus, ClipboardList, Wallet, TrendingDown, TrendingUp,
-  MapPin, Phone, Pencil, Trash2, ChevronDown, Filter, Calendar,
+  MapPin, Phone, Pencil, Trash2, Copy, ChevronDown, Filter, Calendar,
 } from 'lucide-react';
 
 const CLASS_LEVELS = ['Nursery','LKG','UKG','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8','Class 9','Class 10 (Board)','Class 11','Class 12 (Board)','Competitive Exam (JEE/NEET)','Competitive Exam (Govt Job)','Summer Classes','Drawing / Art','Music / Singing','Dance','Other'];
@@ -58,8 +58,7 @@ function StatCard({ label, value, subtitle, icon: Icon, accent }: { label:string
 
 // ── Row ────────────────────────────────────────────────────────────────────────
 
-function AssignmentRow({ a, onStatus, onDelete, onEdit, muted=false }: { a: Assignment; onStatus:(id:string,s:ClassStatus)=>void; onDelete:(id:string)=>void; onEdit:(a:Assignment)=>void; muted?:boolean }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+function AssignmentRow({ a, onStatus, onDelete, onEdit, onDuplicate, muted=false }: { a: Assignment; onStatus:(id:string,s:ClassStatus)=>void; onDelete:(id:string)=>void; onEdit:(a:Assignment)=>void; onDuplicate:(a:Assignment)=>void; muted?:boolean }) {  const [menuOpen, setMenuOpen] = useState(false);
   const profit = (a.monthlyFeeParent||0) - (a.monthlyFeeTutor||0);
   const st = STATUS_STYLE[a.status];
 
@@ -131,6 +130,7 @@ function AssignmentRow({ a, onStatus, onDelete, onEdit, muted=false }: { a: Assi
         <div className="flex items-center opacity-0 transition group-hover:opacity-100">
           <button type="button" onClick={()=>onEdit(a)} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6B7280] hover:bg-black/[0.05] hover:text-[#111827]" aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></button>
           <button type="button" onClick={()=>onDelete(a.id!)} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6B7280] hover:bg-[oklch(0.55_0.18_25/0.1)] hover:text-[oklch(0.55_0.18_25)]" aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+          <button type="button" onClick={()=>onDuplicate(a)} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6B7280] hover:bg-[oklch(0.58_0.19_258/0.1)] hover:text-[oklch(0.58_0.19_258)]" aria-label="Duplicate for new month"><Copy className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     </div>
@@ -343,6 +343,19 @@ export default function AssignmentsPage() {
       try { await generateRemindersForAssignment(newA); } catch {}
     }
   }
+
+  function handleDuplicate(a: Assignment) {
+  const today = new Date().toISOString().split('T')[0];
+  const { id, createdAt, ...rest } = a;
+  setModal({
+    open: true,
+    record: {
+      ...rest,
+      startDate: today,   // reset to today so the new month's start date is correct
+      status: 'active',   // new cycle starts active regardless of the old one's status
+    } as Assignment,
+  });
+}
   async function setStatus(id: string, status: ClassStatus) {
     await updateAssignment(id, { status });
     setAssignments(p => p.map(x => x.id===id ? {...x,status} : x));
@@ -423,15 +436,13 @@ export default function AssignmentsPage() {
             <div className="text-[11.5px] text-[#6B7280]">Try clearing filters or add a new assignment.</div>
           </div>
         ) : (<>
-          {activeLike.map(a => <AssignmentRow key={a.id} a={a} onStatus={setStatus} onDelete={remove} onEdit={(a)=>setModal({open:true,record:a})} />)}
-          {completed.length>0 && (
+            {activeLike.map(a => <AssignmentRow key={a.id} a={a} onStatus={setStatus} onDelete={remove} onEdit={(a)=>setModal({open:true,record:a})} onDuplicate={handleDuplicate} />)}          {completed.length>0 && (
             <div className="pt-6">
               <div className="mb-3 flex items-center gap-3">
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">Completed · {completed.length}</div>
                 <div className="h-px flex-1 bg-gradient-to-r from-black/[0.08] to-transparent" />
               </div>
-              <div className="space-y-2.5">{completed.map(a => <AssignmentRow key={a.id} a={a} onStatus={setStatus} onDelete={remove} onEdit={(a)=>setModal({open:true,record:a})} muted />)}</div>
-            </div>
+            <div className="space-y-2.5">{completed.map(a => <AssignmentRow key={a.id} a={a} onStatus={setStatus} onDelete={remove} onEdit={(a)=>setModal({open:true,record:a})} onDuplicate={handleDuplicate} muted />)}</div>            </div>
           )}
         </>)}
       </section>
