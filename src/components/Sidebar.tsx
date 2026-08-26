@@ -33,6 +33,7 @@ const GROUPS: NavGroup[] = [
   { label: 'Finance', items: [
     { label: 'Expenses', href: '/expenses', icon: TrendingDown },
     { label: 'Incomes', href: '/income', icon: TrendingUp },
+    { label: 'Revenue', href: '/revenue', icon: TrendingUp },
   ]},
   { label: 'Admin', items: [
     { label: 'Staff',    href: '/staff',    icon: UsersRound },
