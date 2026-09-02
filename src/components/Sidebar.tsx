@@ -3,8 +3,8 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, canAccess, UserRole } from '@/context/AuthContext';
 import {
-  Home, BarChart3, Target, Users, GraduationCap, ClipboardList,
-  Wallet, Bell, MessageCircle, CheckSquare, TrendingDown,TrendingUp, UsersRound,
+  Home, BarChart3, Target, Users, GraduationCap, ClipboardList, ClipboardCheck,
+  Wallet, Bell, MessageCircle, CheckSquare, TrendingDown, TrendingUp, UsersRound,
   Settings, KeyRound, LogOut, Wand2, type LucideIcon,
 } from 'lucide-react';
 
@@ -26,6 +26,7 @@ const GROUPS: NavGroup[] = [
   ]},
   { label: 'Operations', items: [
     { label: 'Fees',       href: '/fees',           icon: Wallet },
+    { label: 'Attendance', href: '/attendance',      icon: ClipboardCheck },
     { label: 'Reminders',  href: '/reminders',       icon: Bell },
     { label: 'Comms Log',  href: '/communications',  icon: MessageCircle },
     { label: 'Tasks',      href: '/tasks',           icon: CheckSquare },
