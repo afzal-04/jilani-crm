@@ -25,15 +25,7 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
 };
 
 const today = () => new Date().toISOString().split('T')[0];
-
-function monthLabelOf(dateStr: string): string {
-  if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-}
-function yearOf(dateStr: string): string {
-  if (!dateStr) return '';
-  return new Date(dateStr).getFullYear().toString();
-}
+const firstOfThisMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
 
 const EMPTY: Omit<AttendanceRecord, 'id' | 'createdAt'> = {
   studentName: '', tutorName: '', subject: '', classLevel: '',
@@ -52,7 +44,6 @@ function AttendanceModal({ initial, onSave, onClose, assignments }: {
   const [saving, setSaving] = useState(false);
   const f = (k: keyof typeof form, v: string | number) => setForm(p => ({ ...p, [k]: v }));
 
-  // Selecting an assignment auto-fills tutor/subject/class so admin doesn't retype
   function pickAssignment(id: string) {
     const a = assignments.find(x => x.id === id);
     if (!a) return;
@@ -119,11 +110,19 @@ function AttendanceModal({ initial, onSave, onClose, assignments }: {
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [yearFilter, setYearFilter] = useState<string>('all');
-  const [monthFilter, setMonthFilter] = useState<string>(monthLabelOf(today()));
-  const [tutorFilter, setTutorFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'all'>('all');
   const [modal, setModal] = useState<{ open: boolean; record?: AttendanceRecord }>({ open: false });
+  const [showFilter, setShowFilter] = useState(true);
+
+  // Pending = what's typed in the filter inputs; Applied = what's actually
+  // filtering the table below. They only sync when "Search" is clicked,
+  // matching the reference UI (not live-filter-as-you-type).
+  const [pendingFrom, setPendingFrom] = useState(firstOfThisMonth());
+  const [pendingTo, setPendingTo] = useState(today());
+  const [pendingTutor, setPendingTutor] = useState('all');
+  const [appliedFrom, setAppliedFrom] = useState(firstOfThisMonth());
+  const [appliedTo, setAppliedTo] = useState(today());
+  const [appliedTutor, setAppliedTutor] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'all'>('all');
 
   const loadAll = useCallback(async () => {
     const [r, a] = await Promise.all([getAttendance(), getAssignments()]);
@@ -132,20 +131,23 @@ export default function AttendancePage() {
   }, []);
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const allYears = Array.from(new Set(records.map(r => yearOf(r.date)).filter(Boolean))).sort((a, b) => Number(b) - Number(a));
   const allTutors = Array.from(new Set(records.map(r => r.tutorName).filter(Boolean))).sort();
-  const availableMonths = Array.from(new Set(
-    records.filter(r => yearFilter === 'all' || yearOf(r.date) === yearFilter).map(r => monthLabelOf(r.date)).filter(Boolean)
-  )).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  function handleSearch() {
+    setAppliedFrom(pendingFrom);
+    setAppliedTo(pendingTo);
+    setAppliedTutor(pendingTutor);
+  }
+  function handleClearFilter() {
+    const from = firstOfThisMonth(), to = today();
+    setPendingFrom(from); setPendingTo(to); setPendingTutor('all');
+    setAppliedFrom(from); setAppliedTo(to); setAppliedTutor('all');
+    setStatusFilter('all');
+  }
 
   const filtered = records
-    .filter(r => {
-      if (yearFilter === 'all' && monthFilter === 'all') return true;
-      if (monthFilter !== 'all') return monthLabelOf(r.date) === monthFilter;
-      if (yearFilter !== 'all') return yearOf(r.date) === yearFilter;
-      return true;
-    })
-    .filter(r => tutorFilter === 'all' || r.tutorName === tutorFilter)
+    .filter(r => (!appliedFrom || r.date >= appliedFrom) && (!appliedTo || r.date <= appliedTo))
+    .filter(r => appliedTutor === 'all' || r.tutorName === appliedTutor)
     .filter(r => statusFilter === 'all' || r.status === statusFilter)
     .sort((a, b) => b.date.localeCompare(a.date));
 
@@ -168,44 +170,65 @@ export default function AttendancePage() {
     await deleteAttendance(id);
     setRecords(p => p.filter(x => x.id !== id));
   }
-  function handleYearChange(y: string) { setYearFilter(y); setMonthFilter('all'); }
 
-  const viewLabel = monthFilter !== 'all' ? monthFilter : yearFilter !== 'all' ? `Year ${yearFilter}` : 'All Time';
+  const rangeLabel = appliedFrom && appliedTo
+    ? (appliedFrom === appliedTo ? appliedFrom : `${appliedFrom} to ${appliedTo}`)
+    : 'All Time';
 
   return (
     <AppShell title="Attendance" onRefresh={loadAll}>
 
       <StatsRow>
-        <StatCard icon="📋" num={String(total)} label={`Sessions — ${viewLabel}`} sub="all statuses" color="blue" />
+        <StatCard icon="📋" num={String(total)} label={`Sessions — ${rangeLabel}`} sub="all statuses" color="blue" />
         <StatCard icon="✅" num={`${attendanceRate}%`} label="Attendance Rate" sub={`${presentCount} present`} color="green" />
-        <StatCard icon="❌" num={String(absentCount)} label="Absences" sub={viewLabel} color="red" />
+        <StatCard icon="❌" num={String(absentCount)} label="Absences" sub={rangeLabel} color="red" />
         <StatCard icon="👥" num={String(allTutors.length)} label="Tutors Tracked" sub="with records" color="gold" />
       </StatsRow>
 
+      {/* Date range + tutor filter panel */}
+      {showFilter && (
+        <div style={{ background: '#FCEFEF', border: '1px solid #F3D5D5', borderRadius: 12, padding: 16, marginBottom: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-dark, #333)', marginBottom: 6 }}>From Date</label>
+              <input type="date" value={pendingFrom} onChange={e => setPendingFrom(e.target.value)}
+                style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13.5, background: '#fff', minWidth: 160 }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-dark, #333)', marginBottom: 6 }}>To Date</label>
+              <input type="date" value={pendingTo} onChange={e => setPendingTo(e.target.value)}
+                style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13.5, background: '#fff', minWidth: 160 }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-dark, #333)', marginBottom: 6 }}>Tutor Name</label>
+              <select value={pendingTutor} onChange={e => setPendingTutor(e.target.value)}
+                style={{ padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 13.5, background: '#fff', minWidth: 200 }}>
+                <option value="all">All Tutors</option>
+                {allTutors.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <button onClick={handleSearch}
+              style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#6FA84B', color: '#fff', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}>
+              SEARCH
+            </button>
+          </div>
+          <button onClick={() => setShowFilter(false)}
+            style={{ marginTop: 12, fontSize: 12.5, fontWeight: 600, color: '#C0392B', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            ✕ HIDE FILTER
+          </button>
+        </div>
+      )}
+      {!showFilter && (
+        <button onClick={() => setShowFilter(true)}
+          style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--blue)', background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', width: 'fit-content' }}>
+          ▸ SHOW FILTER
+        </button>
+      )}
+
       <Card>
-        <CardHeader title={`📅 Attendance Records — ${viewLabel} (${filtered.length})`}>
+        <CardHeader title={`📅 Attendance Records — ${rangeLabel} (${filtered.length})`}>
           <BtnPrimary onClick={() => setModal({ open: true })}>+ Mark Attendance</BtnPrimary>
         </CardHeader>
-
-        <FilterRow>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>Year:</span>
-          <FilterBtn active={yearFilter === 'all' && monthFilter === 'all'} onClick={() => { setYearFilter('all'); setMonthFilter('all'); }}>All Time</FilterBtn>
-          {allYears.map(y => <FilterBtn key={y} active={yearFilter === y && monthFilter === 'all'} onClick={() => handleYearChange(y)}>{y}</FilterBtn>)}
-        </FilterRow>
-
-        {availableMonths.length > 0 && (
-          <FilterRow>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>Month:</span>
-            <FilterBtn active={monthFilter === 'all'} onClick={() => setMonthFilter('all')}>{yearFilter === 'all' ? 'All Months' : `All of ${yearFilter}`}</FilterBtn>
-            {availableMonths.map(m => <FilterBtn key={m} active={monthFilter === m} onClick={() => setMonthFilter(m)}>{m.split(' ')[0].substring(0, 3)} {m.split(' ')[1]}</FilterBtn>)}
-          </FilterRow>
-        )}
-
-        <FilterRow>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>Tutor:</span>
-          <FilterBtn active={tutorFilter === 'all'} onClick={() => setTutorFilter('all')}>All</FilterBtn>
-          {allTutors.map(t => <FilterBtn key={t} active={tutorFilter === t} onClick={() => setTutorFilter(t)}>{t}</FilterBtn>)}
-        </FilterRow>
 
         <FilterRow>
           <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>Status:</span>
@@ -217,7 +240,7 @@ export default function AttendancePage() {
           <table>
             <thead><tr><th>Date</th><th>Student/Parent</th><th>Tutor</th><th>Subject</th><th>Duration</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
             <tbody>
-              {filtered.length === 0 && <Empty colSpan={8} text={records.length === 0 ? 'No attendance recorded yet.' : `No records found for ${viewLabel}.`} />}
+              {filtered.length === 0 && <Empty colSpan={8} text={records.length === 0 ? 'No attendance recorded yet.' : `No records found for ${rangeLabel}.`} />}
               {filtered.map(r => (
                 <tr key={r.id}>
                   <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{r.date}</td>
