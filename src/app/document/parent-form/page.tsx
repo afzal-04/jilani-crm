@@ -6,7 +6,9 @@
 // classes); everything else stays manually editable. Print via the button
 // at the bottom, same as the original static HTML file.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth, canAccess } from '@/context/AuthContext';
 import { getParents, getAssignments, Parent, Assignment } from '@/lib/firestore';
 
 // ── Date field: types DD/MM/YYYY as you go, or pick from calendar icon ──────
@@ -133,11 +135,19 @@ const EMPTY_FORM = {
 };
 
 export default function ParentEnrollmentFormPage() {
+  const router = useRouter();
+  const { user, role, loading } = useAuth();
   const [searchPhone, setSearchPhone] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [matches, setMatches] = useState<{ parent: Parent; assignment?: Assignment }[]>([]);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { router.push('/login'); return; }
+    if (!canAccess(role, '/document/parent-form')) router.push('/dashboard');
+  }, [user, role, loading, router]);
 
   const set = (k: keyof typeof EMPTY_FORM, v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -195,12 +205,35 @@ export default function ParentEnrollmentFormPage() {
     setMatches([]); setSearchPhone(''); setSearchError('');
   }
 
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f4f7fb', fontFamily: 'sans-serif' }}>
+        <div style={{ color: '#1B5FA8', fontWeight: 600, fontSize: 14 }}>Loading Parent Registration Form…</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: FORM_CSS }} />
 
+      {/* Back navigation header — hidden when printing */}
+      <div className="jht-search-bar" style={{ maxWidth: 794, margin: '16px auto 0', padding: '0 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 2px', marginBottom: 6 }}>
+          <button
+            onClick={() => router.push('/parents')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#1f2937', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+          >
+            ← Back to Parents
+          </button>
+          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, letterSpacing: '0.5px' }}>
+            PARENT REGISTRATION FORM
+          </span>
+        </div>
+      </div>
+
       {/* Search bar — hidden when printing */}
-      <div className="jht-search-bar" style={{ maxWidth: 794, margin: '20px auto 0', padding: '0 16px' }}>
+      <div className="jht-search-bar" style={{ maxWidth: 794, margin: '8px auto 0', padding: '0 16px' }}>
         <div style={{ background: '#fff', border: '1px solid #eef1f5', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>🔍 Autofill from CRM</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

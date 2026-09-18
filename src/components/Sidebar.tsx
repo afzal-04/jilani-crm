@@ -5,7 +5,7 @@ import { useAuth, canAccess, UserRole } from '@/context/AuthContext';
 import {
   Home, BarChart3, Target, Users, GraduationCap, ClipboardList, ClipboardCheck,
   Wallet, Bell, MessageCircle, CheckSquare, TrendingDown, TrendingUp, UsersRound,
-  Settings, KeyRound, LogOut, Wand2, type LucideIcon,
+  Settings, KeyRound, LogOut, Wand2, FileText, type LucideIcon,
 } from 'lucide-react';
 
 type NavItem  = { label: string; href: string; icon: LucideIcon };
@@ -18,11 +18,12 @@ const GROUPS: NavGroup[] = [
     { label: 'Analytics', href: '/reports',   icon: BarChart3 },
   ]},
   { label: 'Pipeline', items: [
-    { label: 'Lead Pipeline',   href: '/leads',       icon: Target },
-    { label: 'Parents',         href: '/parents',     icon: Users },
-    { label: 'Tutors',          href: '/tutors',      icon: GraduationCap },
-    { label: 'Assignments',     href: '/assignments', icon: ClipboardList },
-    { label: 'Tutor Matching',  href: '/matching',    icon: Wand2 },
+    { label: 'Lead Pipeline',            href: '/leads',                icon: Target },
+    { label: 'Parents',                  href: '/parents',              icon: Users },
+    { label: 'Parent Registration Form', href: '/document/parent-form',  icon: FileText },
+    { label: 'Tutors',                   href: '/tutors',               icon: GraduationCap },
+    { label: 'Assignments',              href: '/assignments',           icon: ClipboardList },
+    { label: 'Tutor Matching',           href: '/matching',              icon: Wand2 },
   ]},
   { label: 'Operations', items: [
     { label: 'Fees',       href: '/fees',           icon: Wallet },
