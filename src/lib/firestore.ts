@@ -74,6 +74,7 @@ export interface FeeRecord {
   tutorName: string; parentName: string;
   subject: string; classLevel: string;
   hoursPerMonth?: number;      // ← ADD THIS LINE
+  startDate?: string;          // tuition start date
   parentFee: number; tutorFee: number; profit: number;
   month: string;
   paymentStatus: 'pending' | 'received' | 'paid';

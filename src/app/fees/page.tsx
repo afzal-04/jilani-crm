@@ -138,7 +138,7 @@ function ContactSelect({ label, contacts, value, onSelect, placeholder }: { labe
 
 // ── Add/Edit modal ─────────────────────────────────────────────────────────────
 
-const EMPTY: Omit<FeeRow,'id'|'createdAt'> = { tutorName:'', parentName:'', subject:'', classLevel:'', hoursPerMonth:0, parentFee:0, tutorFee:0, profit:0, month:'', paymentStatus:'pending', notes:'' };
+const EMPTY: Omit<FeeRow,'id'|'createdAt'> = { tutorName:'', parentName:'', subject:'', classLevel:'', hoursPerMonth:0, startDate:'', parentFee:0, tutorFee:0, profit:0, month:'', paymentStatus:'pending', notes:'' };
 
 function FeeModal({ initial, onSave, onClose, parents, tutors }: { initial?:FeeRow; onSave:(d:typeof EMPTY)=>Promise<void>; onClose:()=>void; parents:Parent[]; tutors:Tutor[] }) {
   const [form, setForm] = useState(initial ? {...EMPTY,...initial} : {...EMPTY});
@@ -184,8 +184,8 @@ function FeeModal({ initial, onSave, onClose, parents, tutors }: { initial?:FeeR
               <option value="">Select Month</option>{getMonthOptions().map(m=><option key={m}>{m}</option>)}
             </select>
           </Field>
-          <Field label="Hours This Month">
-            <input type="number" min="0" step="0.5" value={form.hoursPerMonth||''} onChange={e=>f('hoursPerMonth',Number(e.target.value))} placeholder="e.g. 12" className={inputCls} />
+          <Field label="Tuition Start Date">
+            <input type="date" value={form.startDate||''} onChange={e=>f('startDate',e.target.value)} className={inputCls} />
           </Field>
         </div>
 
@@ -356,7 +356,7 @@ export default function FeesPage() {
           <table className="w-full min-w-[760px] text-left text-[12.5px]">
             <thead>
               <tr className="border-b border-black/[0.1] bg-[oklch(0.96_0.006_260)]">
-                {['Tutor','Parent','Subject & Class','Month','Hrs','Parent Pays','Tutor Gets','Profit','Status'].map(h => <th key={h} className="px-3 py-3 font-semibold text-black/65">{h}</th>)}
+                {['Tutor','Parent','Subject & Class','Month','Start Date','Parent Pays','Tutor Gets','Profit','Status'].map(h => <th key={h} className="px-3 py-3 font-semibold text-black/65">{h}</th>)}
                 <th className="px-3 py-3 text-right font-semibold text-black/65">Actions</th>
               </tr>
             </thead>
@@ -378,7 +378,7 @@ export default function FeesPage() {
                       <span className="inline-flex items-center rounded-md border border-black/[0.1] bg-black/[0.04] px-1.5 py-1 text-[10.5px] font-medium text-black/75">{r.subject}<span className="mx-1.5 h-3 w-px bg-black/[0.15]" />{r.classLevel}</span>
                     </td>
                     <td className="px-3 py-3 text-black/70">{r.month}</td>
-                    <td className="px-3 py-3 text-black/70">{r.hoursPerMonth ? `${r.hoursPerMonth}h` : '—'}</td>
+                    <td className="px-3 py-3 text-black/70">{r.startDate ? new Date(r.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
                     <td className="px-3 py-3"><span className="font-bold" style={{ color:'oklch(0.4 0.17 155)' }}>{inr(r.parentFee||0)}</span></td>
                     <td className="px-3 py-3 "><span className="font-bold" style={{ color:'oklch(0.5 0.19 25)' }}>{inr(r.tutorFee||0)}</span></td>
                     <td className="px-3 py-3"><span className="font-bold text-nowrap" style={{ color: profit>=0 ? 'oklch(0.4 0.17 155)' : 'oklch(0.5 0.19 25)' }}>{profit>0?'+':''}{inr(profit)}</span></td>
