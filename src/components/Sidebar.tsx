@@ -22,6 +22,7 @@ const GROUPS: NavGroup[] = [
     { label: 'Parents',                  href: '/parents',              icon: Users },
     { label: 'Parent Registration Form', href: '/document/parent-form',  icon: FileText },
     { label: 'Tutors',                   href: '/tutors',               icon: GraduationCap },
+    { label: 'Tutor Registration Form',  href: '/document/tutor-form',   icon: FileText },
     { label: 'Assignments',              href: '/assignments',           icon: ClipboardList },
     { label: 'Tutor Matching',           href: '/matching',              icon: Wand2 },
   ]},

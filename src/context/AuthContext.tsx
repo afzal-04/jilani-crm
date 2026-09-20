@@ -29,14 +29,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin:   ['*'],
   manager: [
     '/dashboard', '/reports',
-    '/leads', '/parents', '/document/parent-form', '/tutors', '/assignments',
+    '/leads', '/parents', '/document/parent-form', '/tutors', '/document/tutor-form', '/assignments',
     '/fees', '/communications', '/tasks',
     '/reminders',                          // managers can view fee reminders
     '/change-password', '/settings',
   ],
   staff: [
     '/dashboard',
-    '/parents', '/document/parent-form', '/tutors',
+    '/parents', '/document/parent-form', '/tutors', '/document/tutor-form',
     '/communications', '/tasks',
     '/change-password',
   ],

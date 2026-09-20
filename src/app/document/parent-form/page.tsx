@@ -54,7 +54,15 @@ const FORM_CSS = `
     font-family: 'Open Sans', sans-serif;
     background: #d0dada; display: flex; flex-direction: column; align-items: center; padding: 20px 16px;
   }
-  .jht-form { width: 794px; background: var(--white); box-shadow: 0 4px 32px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+  .jht-form {
+    width: 794px;
+    min-height: 1123px;
+    background: var(--white);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
   .jht-form .header { background: var(--teal-dark) !important; padding: 16px 22px 14px; display: flex; align-items: center; gap: 16px; }
   .jht-form .logo-circle { width: 68px; height: 68px; border-radius: 50%; background: #fff !important; border: 3px solid var(--gold-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
   .jht-form .logo-circle img { width: 86%; height: 86%; object-fit: contain; }
@@ -70,7 +78,7 @@ const FORM_CSS = `
   .jht-form .msme-box .mn { font-size: 9.5px; color: var(--gold); font-weight:700; font-family:'Montserrat',sans-serif; margin-top:3px; }
   .jht-form .gold-banner { background: var(--gold-light) !important; border-top: 2px solid var(--gold-border); border-bottom: 2px solid var(--gold-border); text-align: center; padding: 3px; font-family: 'Montserrat', sans-serif; font-size: 8.5px; font-weight: 700; color: var(--gold); letter-spacing: 4px; }
   .jht-form .form-title-bar { background: var(--teal) !important; text-align: center; padding: 5px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 2px; }
-  .jht-form .form-body { padding: 8px 20px 0; background: var(--bg) !important; flex: 1; }
+  .jht-form .form-body { padding: 8px 20px 0; background: var(--bg) !important; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
   .jht-form .enroll-row { display: flex; gap: 10px; margin-bottom: 6px; }
   .jht-form .enroll-box { flex: 1; border: 1.5px solid var(--teal); padding: 4px 10px; display: flex; align-items: center; gap: 8px; background: #fff !important; }
   .jht-form .enroll-box label { font-size: 9px; font-weight: 700; color: var(--teal); font-family: 'Montserrat', sans-serif; letter-spacing: 1px; white-space: nowrap; }
@@ -111,17 +119,52 @@ const FORM_CSS = `
   .jht-form .footer-right .tb .g { color: var(--gold); }
   .jht-form .footer-right .ud { font-size: 9px; color: #A8C8EC; margin-top: 4px; letter-spacing: 1px; }
   .jht-print-btn { display: block; margin: 18px auto 8px; padding: 11px 36px; background: var(--teal-dark); color: #fff; border: none; border-bottom: 3px solid var(--gold-border); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; cursor: pointer; border-radius: 4px; }
+  
+  /* ── PRINT MEDIA OPTIMIZATION (FULL A4 PAGE FILL) ── */
   @media print {
     .jht-search-bar, .jht-print-btn, .jht-hint { display: none !important; }
-    body { background: none !important; margin: 0; }
-    .jht-form-wrap { background: none !important; padding: 0; }
-    .jht-form { box-shadow: none; width: 100%; }
-    .jht-form .date-wrap .date-pick, .jht-form .date-wrap::after { display: none; }
-    .jht-form .date-wrap .date-fld { padding-right: 8px; }
-    .jht-form .form-body { padding: 8px 18px 0; }
-    .jht-form, .section, .frow, .grid, .sig-row, .enroll-row, .terms-box, .decl-box { break-inside: avoid; page-break-inside: avoid; }
+    html, body { background: none !important; margin: 0 !important; padding: 0 !important; height: 100% !important; }
+    .jht-form-wrap { background: none !important; padding: 0 !important; height: 100% !important; }
+    .jht-form {
+      box-shadow: none !important;
+      width: 100% !important;
+      height: 297mm !important;
+      max-height: 297mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    .jht-form .header { padding: 13px 22px 11px !important; }
+    .jht-form .form-body {
+      padding: 6px 20px 0 !important;
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+    .jht-form .date-wrap .date-pick, .jht-form .date-wrap::after { display: none !important; }
+    .jht-form .date-wrap .date-fld { padding-right: 8px !important; }
+    .jht-form .section { margin-bottom: 4px !important; }
+    .jht-form .sec-head { padding-bottom: 2px !important; margin-bottom: 4px !important; }
+    .jht-form .frow { padding: 0 !important; }
+    .jht-form .flabel { padding: 3px 8px !important; }
+    .jht-form .finput { padding: 3px 8px !important; }
+    .jht-form .terms-box { padding: 4px 12px !important; margin-bottom: 4px !important; }
+    .jht-form .terms-box li { padding: 1px 0 !important; font-size: 8.5px !important; line-height: 1.3 !important; }
+    .jht-form .decl-box { padding: 4px 12px !important; margin-bottom: 4px !important; font-size: 8.5px !important; line-height: 1.35 !important; }
+    .jht-form .sig-row { padding-bottom: 2px !important; gap: 24px !important; }
+    .jht-form .sig-box-space { height: 32px !important; margin-bottom: 3px !important; }
+    .jht-form .sig-box-space img { max-height: 30px !important; }
+    .jht-form .footer { padding: 10px 22px !important; }
+    .jht-form, .section, .frow, .grid, .sig-row, .enroll-row, .terms-box, .decl-box { break-inside: avoid !important; page-break-inside: avoid !important; }
     @page { margin: 0; size: A4 portrait; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   }
 `;
 
