@@ -9,8 +9,8 @@ import { exportFees } from '@/lib/exportExcel';
 import { Modal, ModalFooter, BtnPrimary, BtnSecondary, currency } from '@/components/UI';
 import {
   getFees, addFee, updateFee, deleteFee, generateReminderForFee,
-  getParents, getTutors,
-  FeeRecord, Parent, Tutor,
+  getParents, getTutors, getAssignments,
+  FeeRecord, Parent, Tutor, Assignment,
 } from '@/lib/firestore';
 import {
   Search, Plus, Wallet, TrendingDown, TrendingUp, Clock,
@@ -185,7 +185,9 @@ function FeeModal({ initial, onSave, onClose, parents, tutors }: { initial?:FeeR
             </select>
           </Field>
           <Field label="Tuition Start Date">
-            <input type="date" value={form.startDate||''} onChange={e=>f('startDate',e.target.value)} className={inputCls} />
+            <div className="flex h-10 items-center rounded-xl border border-black/[0.1] bg-black/[0.03] px-3 text-[12.5px] text-black/60">
+              Pulled automatically from the linked Assignment
+            </div>
           </Field>
         </div>
 
@@ -234,19 +236,27 @@ function FeeModal({ initial, onSave, onClose, parents, tutors }: { initial?:FeeR
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FeesPage() {
-  const [fees, setFees]       = useState<FeeRow[]>([]);
-  const [parents, setParents] = useState<Parent[]>([]);
-  const [tutors, setTutors]   = useState<Tutor[]>([]);
+  const [fees, setFees]             = useState<FeeRow[]>([]);
+  const [parents, setParents]       = useState<Parent[]>([]);
+  const [tutors, setTutors]         = useState<Tutor[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [search, setSearch]   = useState('');
   const [statusFilter, setStatusFilter] = useState<'all'|PayStatus>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [modal, setModal]     = useState<{open:boolean; record?:FeeRow}>({open:false});
 
   const loadAll = useCallback(async () => {
-    const [f,p,t] = await Promise.all([getFees(), getParents(), getTutors()]);
-    setFees(f as FeeRow[]); setParents(p); setTutors(t);
+    const [f,p,t,a] = await Promise.all([getFees(), getParents(), getTutors(), getAssignments()]);
+    setFees(f as FeeRow[]); setParents(p); setTutors(t); setAssignments(a);
   }, []);
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Map assignmentId -> assignment for quick lookup
+  const assignmentMap = useMemo(() => {
+    const m = new Map<string, Assignment>();
+    assignments.forEach(a => { if (a.id) m.set(a.id, a); });
+    return m;
+  }, [assignments]);
 
   const availableMonths = useMemo(() => {
     const set = new Set(fees.map(f=>f.month).filter(Boolean));
@@ -378,7 +388,12 @@ export default function FeesPage() {
                       <span className="inline-flex items-center rounded-md border border-black/[0.1] bg-black/[0.04] px-1.5 py-1 text-[10.5px] font-medium text-black/75">{r.subject}<span className="mx-1.5 h-3 w-px bg-black/[0.15]" />{r.classLevel}</span>
                     </td>
                     <td className="px-3 py-3 text-black/70">{r.month}</td>
-                    <td className="px-3 py-3 text-black/70">{r.startDate ? new Date(r.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+                    <td className="px-3 py-3 text-black/70">
+                      {(() => {
+                        const sd = r.assignmentId ? assignmentMap.get(r.assignmentId)?.startDate : r.startDate;
+                        return sd ? new Date(sd).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+                      })()}
+                    </td>
                     <td className="px-3 py-3"><span className="font-bold" style={{ color:'oklch(0.4 0.17 155)' }}>{inr(r.parentFee||0)}</span></td>
                     <td className="px-3 py-3 "><span className="font-bold" style={{ color:'oklch(0.5 0.19 25)' }}>{inr(r.tutorFee||0)}</span></td>
                     <td className="px-3 py-3"><span className="font-bold text-nowrap" style={{ color: profit>=0 ? 'oklch(0.4 0.17 155)' : 'oklch(0.5 0.19 25)' }}>{profit>0?'+':''}{inr(profit)}</span></td>
