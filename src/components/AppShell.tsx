@@ -62,7 +62,7 @@ export default function AppShell({ title, children, onRefresh, badges }: Props) 
       <div className={styles.main}>
         <div className={styles.topbar}>
           <div className={styles.topbarLeft}>
-            <button className={styles.hamburger} onClick={() => setSidebarOpen(true)}>☰</button>
+            <button className={styles.hamburger} onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu">☰</button>
             <h1>{title}</h1>
           </div>
           <div className={styles.topbarRight}>

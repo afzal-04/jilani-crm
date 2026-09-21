@@ -92,7 +92,8 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
         {/* Mobile close button */}
         <button
           onClick={onClose}
-          className="appearance-none absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] text-white/60 md:hidden cursor-pointer outline-none"
+          aria-label="Close sidebar navigation"
+          className="appearance-none absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.06] text-slate-200 md:hidden cursor-pointer outline-none"
         >
           ✕
         </button>
@@ -114,13 +115,13 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
           </div>
           <div className="min-w-0">
             <div className="truncate text-[15px] font-semibold tracking-tight text-white">Jilani CRM</div>
-            <div className="truncate text-[11px] text-white/50">Home Tutor Management</div>
+            <div className="truncate text-[11px] text-slate-300">Home Tutor Management</div>
           </div>
         </div>
 
         {/* Role badge — now dynamic from real auth role */}
         <div className="relative px-5 pb-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/80">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/90">
             <span
               className="h-1.5 w-1.5 rounded-full"
               style={{ background: 'var(--gold)', boxShadow: '0 0 8px oklch(0.78 0.17 75 / 0.8)' }}
@@ -130,10 +131,10 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
         </div>
 
         {/* Nav */}
-        <nav className="relative flex-1 overflow-y-auto px-3 pb-4">
+        <nav className="relative flex-1 overflow-y-auto px-3 pb-4" aria-label="Main sidebar navigation">
           {visibleGroups.map(group => (
             <div key={group.label} className="mb-5">
-              <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+              <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 {group.label}
               </div>
               <ul className="space-y-0.5">
@@ -157,14 +158,14 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
                           'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition text-left cursor-pointer',
                           active
                             ? 'text-white'
-                            : 'bg-transparent text-white/65 hover:bg-white/[0.04] hover:text-white',
+                            : 'bg-transparent text-slate-200 hover:bg-white/[0.06] hover:text-white',
                         ].join(' ')}
                         style={active ? {
                           background: 'linear-gradient(90deg, oklch(0.58 0.19 258 / 0.22) 0%, oklch(0.58 0.19 258 / 0.05) 100%)',
                           boxShadow: 'inset 0 0 0 1px oklch(0.68 0.17 245 / 0.25)',
                         } : undefined}
                       >
-                        <Icon className={['h-4 w-4 flex-none transition-colors', active ? 'text-[color:var(--brand-blue-glow)]' : 'text-white/50 group-hover:text-white/80'].join(' ')} />
+                        <Icon className={['h-4 w-4 flex-none transition-colors', active ? 'text-[color:var(--brand-blue-glow)]' : 'text-slate-400 group-hover:text-white'].join(' ')} />
                         <span className="flex-1 truncate">{item.label}</span>
                         {!!badge && (
                           <span
@@ -201,7 +202,7 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
                 <button
                   type="button"
                   onClick={() => go('/change-password')}
-                  className="appearance-none border-0 bg-transparent p-0 mt-0.5 inline-flex items-center gap-1 text-[11px] text-white/50 transition hover:text-[color:var(--gold)] cursor-pointer outline-none"
+                  className="appearance-none border-0 bg-transparent p-0 mt-0.5 inline-flex items-center gap-1 text-[11px] text-slate-300 transition hover:text-[color:var(--gold)] cursor-pointer outline-none"
                 >
                   <KeyRound className="h-3 w-3" />
                   Change password
@@ -211,7 +212,7 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
             <button
               type="button"
               onClick={handleLogout}
-              className="appearance-none outline-none cursor-pointer mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[12.5px] font-medium text-white/70 transition hover:border-[oklch(0.6_0.22_25/0.4)] hover:bg-[oklch(0.6_0.22_25/0.1)] hover:text-[oklch(0.85_0.15_25)]"
+              className="appearance-none outline-none cursor-pointer mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[12.5px] font-medium text-slate-200 transition hover:border-[oklch(0.6_0.22_25/0.4)] hover:bg-[oklch(0.6_0.22_25/0.1)] hover:text-[oklch(0.85_0.15_25)]"
             >
               <LogOut className="h-3.5 w-3.5" />
               Sign out

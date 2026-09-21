@@ -128,7 +128,7 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
     <div className="overflow-hidden rounded-2xl border border-black/[0.05] bg-white transition duration-300 hover:-translate-y-0.5" style={{ boxShadow: 'var(--shadow-card, 0 1px 3px rgba(0,0,0,.06))' }}>
       <div className="flex items-center justify-between border-b border-black/[0.05] px-5 py-4">
         <h2 className="text-[14px] font-semibold tracking-tight text-[#111827]">{title}</h2>
-        {hint && <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6B7280]">{hint}</span>}
+        {hint && <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#4B5563]">{hint}</span>}
       </div>
       {children}
     </div>
@@ -284,7 +284,7 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
 
       {/* ================= Cinematic hero KPI band ================= */}
       <section
-        className="relative overflow-hidden rounded-3xl p-6 md:p-8"
+        className="relative overflow-hidden rounded-3xl bg-[#0E121E] p-6 md:p-8"
         style={{
           background: 'linear-gradient(135deg, oklch(0.15 0.03 265) 0%, oklch(0.11 0.03 265) 55%, oklch(0.14 0.04 260) 100%)',
           boxShadow: '0 30px 80px -30px oklch(0.14 0.03 265 / 0.45)',
@@ -295,7 +295,7 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
 
         <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-end">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/60">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-slate-200">
               This cycle
             </div>
             <div className="mt-4 flex items-baseline gap-3">
@@ -312,15 +312,15 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                 </span>
               )}
             </div>
-            <p className="mt-2 text-[13px] text-white/55">Net Profit = (Received + Income) − (Tutor Fees Due + Expenses).</p>
+            <p className="mt-2 text-[13px] text-slate-300">Net Profit = (Received + Income) − (Tutor Fees Due + Expenses).</p>
 
             {totalFromParents + totalToTutors > 0 && (
               <div className="mt-6 max-w-md">
-                <div className="mb-1.5 flex items-center justify-between text-[11px] text-white/50">
+                <div className="mb-1.5 flex items-center justify-between text-[11px] text-slate-300">
                   <span>Collected {currency(totalFromParents)}</span>
-                  <span className="text-white/70">Tutor fees due {currency(totalToTutors)}</span>
+                  <span className="text-slate-100 font-medium">Tutor fees due {currency(totalToTutors)}</span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.1]">
                   <div className="h-full rounded-full" style={{
                     width: `${Math.min(100, Math.round((totalPaidToTutors/(totalToTutors||1))*100))}%`,
                     background: 'linear-gradient(90deg, oklch(0.58 0.19 258), oklch(0.78 0.17 75))',
@@ -333,12 +333,12 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2">
             {financeItems.map(f => (
-              <div key={f.label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-3 backdrop-blur">
-                <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/40">{f.label}</div>
+              <div key={f.label} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 backdrop-blur">
+                <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-slate-300">{f.label}</div>
                 <div className="mt-1 text-[16px] font-bold tracking-tight" style={{
                   color: f.tone==='green' ? 'oklch(0.82 0.14 155)' : f.tone==='red' ? 'oklch(0.78 0.16 25)' : 'oklch(0.97 0.01 260)',
                 }}>{f.value}</div>
-                <div className="mt-0.5 text-[10px] text-white/40">{f.sub}</div>
+                <div className="mt-0.5 text-[10px] text-slate-400">{f.sub}</div>
               </div>
             ))}
           </div>
@@ -368,8 +368,8 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
               <div className="relative mt-5 flex items-end justify-between gap-3">
                 <div className="min-w-0">
                   <div className="truncate text-[28px] font-bold leading-none tracking-tight text-[#111827]">{stat.value}</div>
-                  <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">{stat.label}</div>
-                  <div className="mt-1 text-[11.5px] text-[#6B7280]/80">{stat.sub}</div>
+                  <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#4B5563]">{stat.label}</div>
+                  <div className="mt-1 text-[11.5px] font-medium text-[#4B5563]">{stat.sub}</div>
                 </div>
                 {stat.spark && stat.spark.length > 1 && (
                   <div className="flex-none pb-1"><Sparkline data={stat.spark} stroke={s.stroke} fill={s.fill} /></div>
@@ -405,18 +405,18 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
       {/* ================= Two-column tables ================= */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Panel title="Recent Registrations" hint={`${recentActivity.length} shown`}>
-          <div className="overflow-auto">
+          <div className="overflow-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-b-2xl" tabIndex={0} role="region" aria-label="Recent registrations table">
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
                   {['Type','Name','Phone','Area','Status','Date'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">{h}</th>
+                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {recentActivity.length === 0 && (
-                  <tr><td colSpan={6} className="px-5 py-8 text-center text-[#9CA3AF]">No registrations yet.</td></tr>
+                  <tr><td colSpan={6} className="px-5 py-8 text-center text-[#6B7280]">No registrations yet.</td></tr>
                 )}
                 {recentActivity.map((r, idx) => (
                   <tr key={idx} className="border-t border-black/[0.04] transition hover:bg-[oklch(0.98_0.01_260)]">
@@ -432,10 +432,10 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                         <span className="font-medium text-[#111827]">{displayName(r)}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 font-mono text-[11.5px] text-[#6B7280]">{r.phone || '—'}</td>
-                    <td className="px-5 py-3 text-[#6B7280]">{displayLocation(r)}</td>
+                    <td className="px-5 py-3 font-mono text-[11.5px] text-[#4B5563]">{r.phone || '—'}</td>
+                    <td className="px-5 py-3 text-[#4B5563]">{displayLocation(r)}</td>
                     <td className="px-5 py-3"><StatusBadge status={r.status} /></td>
-                    <td className="px-5 py-3 text-[#6B7280]">{r.createdAt ? new Date(r.createdAt.seconds*1000).toLocaleDateString('en-IN') : '—'}</td>
+                    <td className="px-5 py-3 text-[#4B5563]">{r.createdAt ? new Date(r.createdAt.seconds*1000).toLocaleDateString('en-IN') : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -444,18 +444,18 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
         </Panel>
 
         <Panel title="Upcoming Fee Reminders" hint={`${overdueReminders.length} overdue`}>
-          <div className="overflow-auto">
+          <div className="overflow-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-b-2xl" tabIndex={0} role="region" aria-label="Upcoming fee reminders table">
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
                   {['Type','Contact','Amount','Due Date'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">{h}</th>
+                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {upcomingReminders.length === 0 && (
-                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[#9CA3AF]">No pending reminders. 🎉</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[#6B7280]">No pending reminders. 🎉</td></tr>
                 )}
                 {upcomingReminders.map(r => {
                   const isCollect = r.type === 'collect_from_parent';
@@ -497,18 +497,18 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
       {/* ================= Upcoming Tasks ================= */}
       <div className="mt-6">
         <Panel title="Upcoming Tasks" hint={`${pendingTasks} active`}>
-          <div className="overflow-auto">
+          <div className="overflow-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-b-2xl" tabIndex={0} role="region" aria-label="Upcoming tasks table">
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
                   {['Task','Due Date','Priority','Status'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6B7280]">{h}</th>
+                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {upcomingTasks.length === 0 && (
-                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[#9CA3AF]">No tasks yet. 🎉</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[#6B7280]">No tasks yet. 🎉</td></tr>
                 )}
                 {upcomingTasks.map(t => (
                   <tr key={t.id} className="border-t border-black/[0.04] transition hover:bg-[oklch(0.98_0.01_260)]">
@@ -520,7 +520,7 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                         {t.title}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{t.dueDate || '—'}</td>
+                    <td className="px-5 py-3.5 text-[#4B5563]">{t.dueDate || '—'}</td>
                     <td className="px-5 py-3.5"><PriorityBadge priority={t.priority} /></td>
                     <td className="px-5 py-3.5"><StatusBadge status={t.status} /></td>
                   </tr>
