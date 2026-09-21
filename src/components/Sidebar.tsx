@@ -1,11 +1,12 @@
 'use client';
 // src/components/Sidebar.tsx
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, canAccess, UserRole } from '@/context/AuthContext';
 import {
   Home, BarChart3, Target, Users, GraduationCap, ClipboardList, ClipboardCheck,
   Wallet, Bell, MessageCircle, CheckSquare, TrendingDown, TrendingUp, UsersRound,
-  Settings, KeyRound, LogOut, Wand2, FileText, type LucideIcon,
+  Settings, KeyRound, LogOut, Wand2, FileText, ChevronDown, type LucideIcon,
 } from 'lucide-react';
 
 type NavItem  = { label: string; href: string; icon: LucideIcon };
@@ -57,6 +58,11 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
   const pathname = usePathname();
   const router    = useRouter();
   const { user, role, signOut } = useAuth();
+
+  // Collapsible nav groups — all open by default
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const toggleGroup = (label: string) =>
+    setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
   function go(href: string) { router.push(href); onClose(); }
   async function handleLogout() { await signOut(); router.push('/login'); }
@@ -132,59 +138,71 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
 
         {/* Nav */}
         <nav className="relative flex-1 overflow-y-auto px-3 pb-4" aria-label="Main sidebar navigation">
-          {visibleGroups.map(group => (
-            <div key={group.label} className="mb-5">
-              <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                {group.label}
-              </div>
-              <ul className="space-y-0.5">
-                {group.items.map(item => {
-                  const active = pathname === item.href || pathname?.startsWith(item.href + '/');
-                  const Icon   = item.icon;
-                  const badge  = badges[item.href];
-                  return (
-                    <li key={item.href} className="relative">
-                      {active && (
-                        <span
-                          aria-hidden
-                          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full"
-                          style={{ background: 'var(--gradient-blue)', boxShadow: '0 0 14px oklch(0.68 0.17 245 / 0.9)' }}
-                        />
-                      )}
-                      <button
-                        onClick={() => go(item.href)}
-                        className={[
-                          'appearance-none border-0 outline-none', // strip native button chrome (light gray box)
-                          'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition text-left cursor-pointer',
-                          active
-                            ? 'text-white'
-                            : 'bg-transparent text-slate-200 hover:bg-white/[0.06] hover:text-white',
-                        ].join(' ')}
-                        style={active ? {
-                          background: 'linear-gradient(90deg, oklch(0.58 0.19 258 / 0.22) 0%, oklch(0.58 0.19 258 / 0.05) 100%)',
-                          boxShadow: 'inset 0 0 0 1px oklch(0.68 0.17 245 / 0.25)',
-                        } : undefined}
-                      >
-                        <Icon className={['h-4 w-4 flex-none transition-colors', active ? 'text-[color:var(--brand-blue-glow)]' : 'text-slate-400 group-hover:text-white'].join(' ')} />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {!!badge && (
-                          <span
-                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white"
-                            style={{
-                              background: 'linear-gradient(135deg, oklch(0.62 0.22 25) 0%, oklch(0.55 0.22 20) 100%)',
-                              boxShadow: '0 4px 12px -4px oklch(0.6 0.22 25 / 0.7)',
-                            }}
+          {visibleGroups.map(group => {
+            const isCollapsed = collapsedGroups[group.label] ?? false;
+            const hasActivePage = group.items.some(item => pathname === item.href || pathname?.startsWith(item.href + '/'));
+            return (
+              <div key={group.label} className="mb-2">
+                {/* Collapsible group header */}
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className="appearance-none border-0 w-full flex items-center justify-between px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 hover:text-slate-200 transition-colors cursor-pointer outline-none"
+                >
+                  <span>{group.label}</span>
+                  <ChevronDown className={['h-3 w-3 transition-transform duration-200', isCollapsed ? '-rotate-90' : ''].join(' ')} />
+                </button>
+                {!isCollapsed && (
+                  <ul className="space-y-0.5">
+                    {group.items.map(item => {
+                      const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+                      const Icon   = item.icon;
+                      const badge  = badges[item.href];
+                      return (
+                        <li key={item.href} className="relative">
+                          {active && (
+                            <span
+                              aria-hidden
+                              className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full"
+                              style={{ background: 'var(--gradient-blue)', boxShadow: '0 0 14px oklch(0.68 0.17 245 / 0.9)' }}
+                            />
+                          )}
+                          <button
+                            onClick={() => go(item.href)}
+                            className={[
+                              'appearance-none border-0 outline-none',
+                              'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition text-left cursor-pointer',
+                              active
+                                ? 'text-white'
+                                : 'bg-transparent text-slate-200 hover:bg-white/[0.06] hover:text-white',
+                            ].join(' ')}
+                            style={active ? {
+                              background: 'linear-gradient(90deg, oklch(0.58 0.19 258 / 0.22) 0%, oklch(0.58 0.19 258 / 0.05) 100%)',
+                              boxShadow: 'inset 0 0 0 1px oklch(0.68 0.17 245 / 0.25)',
+                            } : undefined}
                           >
-                            {badge}
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                            <Icon className={['h-4 w-4 flex-none transition-colors', active ? 'text-[color:var(--brand-blue-glow)]' : 'text-slate-400 group-hover:text-white'].join(' ')} />
+                            <span className="flex-1 truncate">{item.label}</span>
+                            {!!badge && (
+                              <span
+                                className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white"
+                                style={{
+                                  background: 'linear-gradient(135deg, oklch(0.62 0.22 25) 0%, oklch(0.55 0.22 20) 100%)',
+                                  boxShadow: '0 4px 12px -4px oklch(0.6 0.22 25 / 0.7)',
+                                }}
+                              >
+                                {badge}
+                                <span className="sr-only"> notifications</span>
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* User card — dynamic email/avatar from real auth */}

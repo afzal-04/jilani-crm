@@ -15,7 +15,7 @@ import {
 } from '@/lib/firestore';
 import {
   Users, GraduationCap, ClipboardList, TrendingUp, Bell, FileText, UsersRound,
-  AlertTriangle, ChevronRight, ArrowUpRight, ArrowDownRight,
+  AlertTriangle, ChevronRight, ArrowUpRight, ArrowDownRight, Info, Target,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -242,20 +242,18 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
     { label: 'Total Tutors', value: String(tutors.length), sub: `${newTutors} new leads`, icon: GraduationCap, accent: 'gold',
       ...(tutorsDelta.delta ? { delta: tutorsDelta.delta, trend: tutorsDelta.trend, spark: tutorsSpark } : {}) },
     { label: 'Active Classes', value: String(activeClasses), sub: 'running now', icon: ClipboardList, accent: 'green' },
-    { label: 'Net Profit', value: currency(totalProfit), sub: 'all confirmed fees', icon: TrendingUp, accent: 'blue',
-      ...(profitDelta.delta ? { delta: profitDelta.delta, trend: profitDelta.trend, spark: monthlyRevenue.length>=2 ? monthlyRevenue : undefined } : {}) },
+    { label: 'Conversion Rate', value: `${conversionRate}%`, sub: 'leads converted', icon: Target, accent: 'blue' },
     { label: 'Pending Fees', value: String(pendingFeesCount), sub: 'awaiting payment', icon: FileText, accent: 'gold' },
     { label: 'Fee Reminders', value: String(pendingReminders.length), sub: `${overdueReminders.length} overdue`, icon: Bell, accent: 'red' },
-    
   ];
 
+  // 4 items = clean 2×2 grid in hero — Net Profit shown prominently in hero headline
   const financeItems = [
-  { label: 'Received', value: currency(totalFromParents), tone: 'green' as const, sub: 'from parents' },
-  { label: 'Tutor Fee Due', value: currency(totalToTutors), tone: 'red' as const, sub: `Paid ${currency(totalPaidToTutors)}` },
-  { label: 'Expenses', value: currency(totalExpenses), tone: 'red' as const, sub: `${expenses.length} entries` },
-  { label: 'Income', value: currency(totalIncome), tone: 'green' as const, sub: `${incomes.length} entries` },
-  { label: 'Net Profit', value: currency(totalProfit), tone: (totalProfit>=0?'green':'red') as 'green'|'red', sub: 'this cycle' },
-];
+    { label: 'Received', value: currency(totalFromParents), tone: 'green' as const, sub: 'from parents' },
+    { label: 'Tutor Fee Due', value: currency(totalToTutors), tone: 'red' as const, sub: `Paid ${currency(totalPaidToTutors)}` },
+    { label: 'Expenses', value: currency(totalExpenses), tone: 'red' as const, sub: `${expenses.length} entries` },
+    { label: 'Income', value: currency(totalIncome), tone: 'green' as const, sub: `${incomes.length} entries` },
+  ];
 
   // Recent registrations — real, mixed parents+tutors sorted by date
   const recentActivity = [
@@ -264,7 +262,11 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
   ].sort((a,b) => (b.createdAt?.seconds??0)-(a.createdAt?.seconds??0)).slice(0,6);
 
   const upcomingReminders = [...pendingReminders].sort((a,b) => a.dueDate.localeCompare(b.dueDate)).slice(0,6);
-  const upcomingTasks = [...tasks].sort((a,b) => (a.dueDate||'').localeCompare(b.dueDate||'')).slice(0,6);
+  // Filter out completed tasks — only show pending / in-progress tasks
+  const upcomingTasks = [...tasks]
+    .filter(t => t.status !== 'done')
+    .sort((a,b) => (a.dueDate||'').localeCompare(b.dueDate||''))
+    .slice(0, 6);
 
   const badges: Record<string, number> = {
     '/parents': newParents,
@@ -293,9 +295,9 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
         <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full blur-3xl" style={{ background: 'oklch(0.58 0.19 258 / 0.35)' }} />
         <div aria-hidden className="pointer-events-none absolute -right-24 -bottom-32 h-80 w-80 rounded-full blur-3xl" style={{ background: 'oklch(0.78 0.17 75 / 0.18)' }} />
 
-        <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-end">
+        <div className="relative grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-center">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-slate-200">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-200">
               This cycle
             </div>
             <div className="mt-4 flex items-baseline gap-3">
@@ -303,7 +305,7 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                 {currency(totalProfit)}
               </div>
               {profitDelta.delta && (
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold" style={{
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-bold" style={{
                   background: profitDelta.trend==='up' ? 'oklch(0.7 0.16 155 / 0.15)' : 'oklch(0.62 0.22 25 / 0.15)',
                   color: profitDelta.trend==='up' ? 'oklch(0.82 0.14 155)' : 'oklch(0.78 0.16 25)',
                   border: `1px solid ${profitDelta.trend==='up' ? 'oklch(0.7 0.16 155 / 0.35)' : 'oklch(0.62 0.22 25 / 0.35)'}`,
@@ -312,11 +314,21 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                 </span>
               )}
             </div>
-            <p className="mt-2 text-[13px] text-slate-300">Net Profit = (Received + Income) − (Tutor Fees Due + Expenses).</p>
+            {/* Net Profit formula moved to accessible tooltip — no inline fine-print */}
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[13px] font-medium text-slate-300">Net Profit</span>
+              <span className="group relative inline-flex">
+                <Info className="h-3.5 w-3.5 cursor-help text-slate-400 hover:text-slate-200 transition-colors" />
+                <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-[#1a2035] px-3 py-1.5 text-[11px] text-slate-200 opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                  Net Profit = (Received + Income) − (Tutor Fees + Expenses)
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#1a2035]" />
+                </span>
+              </span>
+            </div>
 
             {totalFromParents + totalToTutors > 0 && (
-              <div className="mt-6 max-w-md">
-                <div className="mb-1.5 flex items-center justify-between text-[11px] text-slate-300">
+              <div className="mt-5 max-w-md">
+                <div className="mb-1.5 flex items-center justify-between text-[12px] text-slate-300">
                   <span>Collected {currency(totalFromParents)}</span>
                   <span className="text-slate-100 font-medium">Tutor fees due {currency(totalToTutors)}</span>
                 </div>
@@ -331,14 +343,15 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2">
+          {/* Always 2-col grid — 4 items = clean 2×2 */}
+          <div className="grid grid-cols-2 gap-3">
             {financeItems.map(f => (
               <div key={f.label} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 backdrop-blur">
-                <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-slate-300">{f.label}</div>
-                <div className="mt-1 text-[16px] font-bold tracking-tight" style={{
-                  color: f.tone==='green' ? 'oklch(0.82 0.14 155)' : f.tone==='red' ? 'oklch(0.78 0.16 25)' : 'oklch(0.97 0.01 260)',
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300">{f.label}</div>
+                <div className="mt-1 text-[17px] font-bold tracking-tight" style={{
+                  color: f.tone==='green' ? 'oklch(0.82 0.14 155)' : 'oklch(0.78 0.16 25)',
                 }}>{f.value}</div>
-                <div className="mt-0.5 text-[10px] text-slate-400">{f.sub}</div>
+                <div className="mt-0.5 text-[11px] text-slate-400">{f.sub}</div>
               </div>
             ))}
           </div>
@@ -402,15 +415,15 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
         </div>
       )}
 
-      {/* ================= Two-column tables ================= */}
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+      {/* ================= Two-column tables — weighted 57/43 to match column density ================= */}
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_1fr]">
         <Panel title="Recent Registrations" hint={`${recentActivity.length} shown`}>
           <div className="overflow-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-b-2xl" tabIndex={0} role="region" aria-label="Recent registrations table">
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
                   {['Type','Name','Phone','Area','Status','Date'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
+                    <th key={h} className="px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -432,8 +445,10 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
                         <span className="font-medium text-[#111827]">{displayName(r)}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 font-mono text-[11.5px] text-[#4B5563]">{r.phone || '—'}</td>
-                    <td className="px-5 py-3 text-[#4B5563]">{displayLocation(r)}</td>
+                    <td className="px-5 py-3 font-mono text-[12px] text-[#4B5563]">{r.phone || '—'}</td>
+                    <td className="max-w-[130px] px-5 py-3 text-[12px] text-[#4B5563]">
+                      <span className="block truncate" title={displayLocation(r)}>{displayLocation(r)}</span>
+                    </td>
                     <td className="px-5 py-3"><StatusBadge status={r.status} /></td>
                     <td className="px-5 py-3 text-[#4B5563]">{r.createdAt ? new Date(r.createdAt.seconds*1000).toLocaleDateString('en-IN') : '—'}</td>
                   </tr>
@@ -448,8 +463,8 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
-                  {['Type','Contact','Amount','Due Date'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
+                  {['Action','Contact','Amount','Due Date'].map(h => (
+                    <th key={h} className="px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -496,31 +511,25 @@ const totalProfit = (totalFromParents + totalIncome) - (totalToTutors + totalExp
 
       {/* ================= Upcoming Tasks ================= */}
       <div className="mt-6">
-        <Panel title="Upcoming Tasks" hint={`${pendingTasks} active`}>
+        <Panel title="Upcoming Tasks" hint={`${upcomingTasks.length} active`}>
           <div className="overflow-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-b-2xl" tabIndex={0} role="region" aria-label="Upcoming tasks table">
             <table className="w-full text-left text-[12.5px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[oklch(0.975_0.005_260)]">
                   {['Task','Due Date','Priority','Status'].map(h => (
-                    <th key={h} className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
+                    <th key={h} className="px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4B5563]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {upcomingTasks.length === 0 && (
-                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[#6B7280]">No tasks yet. 🎉</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-[13px] text-[#6B7280]">All tasks complete! 🎉</td></tr>
                 )}
                 {upcomingTasks.map(t => (
                   <tr key={t.id} className="border-t border-black/[0.04] transition hover:bg-[oklch(0.98_0.01_260)]">
-                    <td className="px-5 py-3.5 font-medium text-[#111827]">
-                      <div className="flex items-center gap-3">
-                        <span className="h-6 w-[3px] rounded-full" style={{
-                          background: t.priority==='high' ? 'oklch(0.62 0.22 25)' : t.priority==='medium' ? 'oklch(0.78 0.17 75)' : 'oklch(0.7 0.16 155)',
-                        }} />
-                        {t.title}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-[#4B5563]">{t.dueDate || '—'}</td>
+                    {/* Removed duplicate left color bar — PriorityBadge already shows priority visually */}
+                    <td className="px-5 py-3.5 text-[13px] font-medium text-[#111827]">{t.title}</td>
+                    <td className="px-5 py-3.5 text-[12px] text-[#4B5563]">{t.dueDate || '—'}</td>
                     <td className="px-5 py-3.5"><PriorityBadge priority={t.priority} /></td>
                     <td className="px-5 py-3.5"><StatusBadge status={t.status} /></td>
                   </tr>
