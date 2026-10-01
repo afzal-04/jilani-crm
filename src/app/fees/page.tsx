@@ -23,6 +23,10 @@ type PayStatus = 'pending'|'received'|'paid';
 const inr = currency;
 const initialsOf = (name:string) => name.split(' ').filter(Boolean).slice(0,2).map(s=>s[0]?.toUpperCase()).join('');
 
+// Month/year helpers for the filter dropdowns
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const NOW = new Date();
+
 // NOTE: hoursPerMonth isn't on FeeRecord yet — add `hoursPerMonth?: number` to the
 // FeeRecord type in lib/firestore.ts so this stops needing `as any` casts below.
 type FeeRow = FeeRecord & { hoursPerMonth?: number };
@@ -35,7 +39,7 @@ const STATUS_STYLE: Record<PayStatus, {label:string;bg:string;fg:string;border:s
 
 function getMonthOptions() {
   const months: string[] = []; const now = new Date();
-  for (let i=0;i<12;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d.toLocaleString('en-IN',{month:'long',year:'numeric'})); }
+  for (let i=-1;i<12;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d.toLocaleString('en-IN',{month:'long',year:'numeric'})); }
   return months;
 }
 
@@ -242,7 +246,11 @@ export default function FeesPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [search, setSearch]   = useState('');
   const [statusFilter, setStatusFilter] = useState<'all'|PayStatus>('all');
-  const [monthFilter, setMonthFilter] = useState<string>('all');
+
+  // Month/Year filter — defaults to the current month & year
+  const [selMonth, setSelMonth] = useState<string>(MONTH_NAMES[NOW.getMonth()]); // 'all' or a month name
+  const [selYear, setSelYear]   = useState<number>(NOW.getFullYear());
+
   const [modal, setModal]     = useState<{open:boolean; record?:FeeRow}>({open:false});
 
   const loadAll = useCallback(async () => {
@@ -258,10 +266,19 @@ export default function FeesPage() {
     return m;
   }, [assignments]);
 
-  const availableMonths = useMemo(() => {
-    const set = new Set(fees.map(f=>f.month).filter(Boolean));
-    return Array.from(set).sort((a,b) => new Date(b).getTime()-new Date(a).getTime()).slice(0,7);
+  // Years present in the data (plus the current year so it's always selectable)
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    fees.forEach(f => {
+      const y = parseInt((f.month || '').trim().split(' ')[1], 10);
+      if (!isNaN(y)) years.add(y);
+    });
+    years.add(NOW.getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
   }, [fees]);
+
+  // Combined "Month Year" string, matching the format stored on each record (e.g. "September 2026")
+  const monthFilter = selMonth === 'all' ? 'all' : `${selMonth} ${selYear}`;
 
   const scopedFees = useMemo(() => monthFilter==='all' ? fees : fees.filter(f=>f.month===monthFilter), [fees, monthFilter]);
 
@@ -347,11 +364,14 @@ export default function FeesPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={()=>setMonthFilter('all')} className={['rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition', monthFilter==='all'?'border-black/[0.14] bg-black/[0.06] text-black/90':'border-transparent text-black/55 hover:bg-black/[0.04] hover:text-black/80'].join(' ')}>All Months</button>
-            {availableMonths.map(m => (
-              <button key={m} type="button" onClick={()=>setMonthFilter(m)} className={['rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition', monthFilter===m?'border-black/[0.14] bg-black/[0.06] text-black/90':'border-transparent text-black/55 hover:bg-black/[0.04] hover:text-black/80'].join(' ')}>{m}</button>
-            ))}
+          <div className="flex items-center gap-2">
+            <select value={selMonth} onChange={e=>setSelMonth(e.target.value)} className={selectCls + ' w-[150px]'}>
+              <option value="all">All Months</option>
+              {MONTH_NAMES.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={selYear} onChange={e=>setSelYear(Number(e.target.value))} disabled={selMonth==='all'} className={selectCls + ' w-[100px] disabled:opacity-50'}>
+              {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
           <ExportButton label="Export" onExport={() => exportFees(filtered)} />
           <button type="button" onClick={()=>setModal({open:true})}
