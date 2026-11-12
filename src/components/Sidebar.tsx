@@ -6,57 +6,68 @@ import { useAuth, canAccess, UserRole } from '@/context/AuthContext';
 import {
   Home, BarChart3, Target, Users, GraduationCap, ClipboardList, ClipboardCheck,
   Wallet, Bell, MessageCircle, CheckSquare, TrendingDown, TrendingUp, UsersRound,
-  Settings, KeyRound, LogOut, Wand2, FileText, ChevronDown, type LucideIcon,
+  Settings, KeyRound, LogOut, Wand2, FileText, ChevronDown, PieChart, type LucideIcon,
 } from 'lucide-react';
 
-type NavItem  = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
 
 // ── Nav structure — routes match your actual src/app/* folder names ──────────
 const GROUPS: NavGroup[] = [
-  { label: 'Overview', items: [
-    { label: 'Dashboard', href: '/dashboard', icon: Home },
-    { label: 'Analytics', href: '/reports',   icon: BarChart3 },
-  ]},
-  { label: 'Pipeline', items: [
-    { label: 'Lead Pipeline',            href: '/leads',                icon: Target },
-    { label: 'Parents',                  href: '/parents',              icon: Users },
-    { label: 'Parent Registration Form', href: '/document/parent-form',  icon: FileText },
-    { label: 'Tutors',                   href: '/tutors',               icon: GraduationCap },
-    { label: 'Tutor Registration Form',  href: '/document/tutor-form',   icon: FileText },
-    { label: 'Assignments',              href: '/assignments',           icon: ClipboardList },
-    { label: 'Tutor Matching',           href: '/matching',              icon: Wand2 },
-  ]},
-  { label: 'Operations', items: [
-    { label: 'Fees',       href: '/fees',           icon: Wallet },
-    { label: 'Attendance', href: '/attendance',      icon: ClipboardCheck },
-    { label: 'Reminders',  href: '/reminders',       icon: Bell },
-    { label: 'Comms Log',  href: '/communications',  icon: MessageCircle },
-    { label: 'Tasks',      href: '/tasks',           icon: CheckSquare },
-  ]},
-  { label: 'Finance', items: [
-    { label: 'Expenses', href: '/expenses', icon: TrendingDown },
-    { label: 'Incomes', href: '/income', icon: TrendingUp },
-    { label: 'Revenue', href: '/revenue', icon: TrendingUp },
-  ]},
-  { label: 'Admin', items: [
-    { label: 'Staff',    href: '/staff',    icon: UsersRound },
-    { label: 'Settings', href: '/settings', icon: Settings },
-  ]},
+  {
+    label: 'Overview', items: [
+      { label: 'Dashboard', href: '/dashboard', icon: Home },
+      { label: 'Analytics', href: '/reports', icon: BarChart3 },
+    ]
+  },
+  {
+    label: 'Pipeline', items: [
+      { label: 'Lead Pipeline', href: '/leads', icon: Target },
+      { label: 'Parents', href: '/parents', icon: Users },
+      { label: 'Parent Registration Form', href: '/document/parent-form', icon: FileText },
+      { label: 'Tutors', href: '/tutors', icon: GraduationCap },
+      { label: 'Tutor Registration Form', href: '/document/tutor-form', icon: FileText },
+      { label: 'Assignments', href: '/assignments', icon: ClipboardList },
+      { label: 'Tutor Matching', href: '/matching', icon: Wand2 },
+    ]
+  },
+  {
+    label: 'Operations', items: [
+      { label: 'Fees', href: '/fees', icon: Wallet },
+      { label: 'Attendance', href: '/attendance', icon: ClipboardCheck },
+      { label: 'Reminders', href: '/reminders', icon: Bell },
+      { label: 'Comms Log', href: '/communications', icon: MessageCircle },
+      { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+    ]
+  },
+  {
+    label: 'Finance', items: [
+      { label: 'Expenses', href: '/expenses', icon: TrendingDown },
+      { label: 'Incomes', href: '/income', icon: TrendingUp },
+      { label: 'Revenue', href: '/revenue', icon: TrendingUp },
+      { label: 'Profit Shares', href: '/profit-shares', icon: PieChart },
+    ]
+  },
+  {
+    label: 'Admin', items: [
+      { label: 'Staff', href: '/staff', icon: UsersRound },
+      { label: 'Settings', href: '/settings', icon: Settings },
+    ]
+  },
 ];
 
 const ROLE_BADGE: Record<UserRole, { label: string }> = {
-  owner:   { label: 'Owner'   },
-  admin:   { label: 'Admin'   },
+  owner: { label: 'Owner' },
+  admin: { label: 'Admin' },
   manager: { label: 'Manager' },
-  staff:   { label: 'Staff'   },
+  staff: { label: 'Staff' },
 };
 
 interface Props { open: boolean; onClose: () => void; badges?: Record<string, number>; }
 
 export default function Sidebar({ open, onClose, badges = {} }: Props) {
   const pathname = usePathname();
-  const router    = useRouter();
+  const router = useRouter();
   const { user, role, signOut } = useAuth();
 
   // Collapsible nav groups — all open by default
@@ -92,8 +103,8 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
           'md:static md:z-30 md:h-screen md:translate-x-0 md:sticky md:top-0',
         ].join(' ')}
         style={{ backgroundImage: 'var(--gradient-navy, none)' }}
-        /* backgroundImage layers ON TOP of the bg-[#0A0F1E] fallback —      *
-         * so even if the CSS variable is missing, you still get solid navy */
+      /* backgroundImage layers ON TOP of the bg-[#0A0F1E] fallback —      *
+       * so even if the CSS variable is missing, you still get solid navy */
       >
         {/* Mobile close button */}
         <button
@@ -155,8 +166,8 @@ export default function Sidebar({ open, onClose, badges = {} }: Props) {
                   <ul className="space-y-0.5">
                     {group.items.map(item => {
                       const active = pathname === item.href || pathname?.startsWith(item.href + '/');
-                      const Icon   = item.icon;
-                      const badge  = badges[item.href];
+                      const Icon = item.icon;
+                      const badge = badges[item.href];
                       return (
                         <li key={item.href} className="relative">
                           {active && (

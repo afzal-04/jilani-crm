@@ -370,3 +370,44 @@ export const getIncomes  = async (): Promise<Income[]>  => snap2arr(await getDoc
 export const addIncome   = (d: Omit<Income,'id'|'createdAt'>) => addDoc(collection(db(),'income'), {...d, createdAt:serverTimestamp()});
 export const updateIncome= (id:string, d:Partial<Income>) => updateDoc(doc(db(),'income',id), d);
 export const deleteIncome= (id:string) => deleteDoc(doc(db(),'income',id));
+
+// ─── Profit Shares ────────────────────────────────────────────────────────────
+
+export interface ProfitShareHolder {
+  id?: string;
+  name: string;           // e.g. "Ahmad Jilani"
+  role: string;           // e.g. "Partner", "Investor", "Company"
+  percentage: number;     // 0–100
+  color: string;          // hex color for display
+  notes: string;
+  isCompany?: boolean;    // true for the "Company Profit" entry
+  createdAt?: { seconds: number };
+  updatedAt?: { seconds: number };
+}
+
+export interface ProfitDistribution {
+  id?: string;
+  month: string;          // e.g. "November 2026"
+  totalProfit: number;    // gross profit amount for that month
+  notes: string;
+  shares: { holderId: string; holderName: string; percentage: number; amount: number }[];
+  createdAt?: { seconds: number };
+}
+
+// Share holders CRUD
+export const getShareHolders  = async (): Promise<ProfitShareHolder[]>  =>
+  snap2arr(await getDocs(query(collection(db(), 'profitShareHolders'), orderBy('createdAt','asc'))));
+export const addShareHolder   = (d: Omit<ProfitShareHolder,'id'|'createdAt'|'updatedAt'>) =>
+  addDoc(collection(db(),'profitShareHolders'), {...d, createdAt:serverTimestamp(), updatedAt:serverTimestamp()});
+export const updateShareHolder= (id:string, d:Partial<ProfitShareHolder>) =>
+  updateDoc(doc(db(),'profitShareHolders',id), {...d, updatedAt:serverTimestamp()});
+export const deleteShareHolder= (id:string) => deleteDoc(doc(db(),'profitShareHolders',id));
+
+// Distribution history CRUD
+export const getProfitDistributions  = async (): Promise<ProfitDistribution[]>  =>
+  snap2arr(await getDocs(query(collection(db(), 'profitDistributions'), orderBy('createdAt','desc'))));
+export const addProfitDistribution   = (d: Omit<ProfitDistribution,'id'|'createdAt'>) =>
+  addDoc(collection(db(),'profitDistributions'), {...d, createdAt:serverTimestamp()});
+export const updateProfitDistribution= (id:string, d:Partial<ProfitDistribution>) =>
+  updateDoc(doc(db(),'profitDistributions',id), d);
+export const deleteProfitDistribution= (id:string) => deleteDoc(doc(db(),'profitDistributions',id));
